@@ -2,20 +2,26 @@ package com.example.music.data.repository
 
 import android.content.Context
 import android.util.Log
-import com.example.music.data.local.database.AppDatabase
-import com.example.music.data.local.entity.UserEntity
+import com.example.music.data.model.AccountType
 import com.example.music.data.model.AdminCredentials
 import com.example.music.data.model.UserPreferences
-import com.example.music.utils.PasswordUtil
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.util.UUID
 
+/**
+ * Repositorio de autenticación
+ * Gestiona login, registro y sincronización de datos
+ *
+ * 3 Modos de usuario:
+ * 1. GUEST - Sin login, datos locales (se pierden al desinstalar)
+ * 2. LOCAL - Con cuenta, datos sincronizados con Firebase
+ * 3. ADMIN - Desarrollador, acceso a features especiales
+ */
 class AuthRepository(private val context: Context) {
 
     private val TAG = "AuthRepository"
-    private val userDao = AppDatabase.getDatabase(context).userDao()
 
     // Estado actual del usuario
     private val _currentUser = MutableStateFlow<UserPreferences?>(null)
@@ -29,6 +35,8 @@ class AuthRepository(private val context: Context) {
      */
     suspend fun initialize() {
         try {
+            // TODO: Cargar de DataStore
+            // Por ahora, crear usuario guest
             val guestUser = createGuestUser()
             _currentUser.value = guestUser
             _authState.value = AuthState.Success(guestUser)
@@ -40,6 +48,7 @@ class AuthRepository(private val context: Context) {
 
     /**
      * Login con email y password
+     * Verifica primero si es admin, luego intenta Firebase
      */
     suspend fun login(email: String, password: String): AuthResult {
         return try {
@@ -60,40 +69,25 @@ class AuthRepository(private val context: Context) {
 
                 _currentUser.value = adminUser
                 _authState.value = AuthState.Success(adminUser)
+
                 Log.d(TAG, "✅ Admin login successful")
                 return AuthResult.Success(adminUser)
             }
 
-            // ✅ Buscar usuario en base de datos
-            val userEntity = userDao.getUserByEmail(email)
-
-            if (userEntity == null) {
-                Log.w(TAG, "❌ User not found: $email")
-                _authState.value = AuthState.Error("User not found")
-                return AuthResult.Error("Email not registered")
-            }
-
-            // ✅ Verificar password
-            if (!PasswordUtil.verifyPassword(password, userEntity.passwordHash)) {
-                Log.w(TAG, "❌ Invalid password for: $email")
-                _authState.value = AuthState.Error("Invalid password")
-                return AuthResult.Error("Invalid password")
-            }
-
-            // ✅ Login exitoso
+            // TODO: Intentar login con Firebase
+            // Por ahora, simular login local
             val user = UserPreferences(
-                userId = userEntity.email,
-                userName = userEntity.name,
-                userEmail = userEntity.email,
+                userId = UUID.randomUUID().toString(),
+                userName = email.substringBefore("@"),
+                userEmail = email,
                 isLoggedIn = true,
-                isAdmin = userEntity.isAdmin,
-                accountCreatedAt = userEntity.createdAt
+                isAdmin = false
             )
 
             _currentUser.value = user
             _authState.value = AuthState.Success(user)
-            Log.d(TAG, "✅ User login successful: ${user.userName}")
 
+            Log.d(TAG, "✅ User login successful: ${user.userName}")
             AuthResult.Success(user)
 
         } catch (e: Exception) {
@@ -108,49 +102,26 @@ class AuthRepository(private val context: Context) {
      */
     suspend fun register(email: String, password: String, userName: String): AuthResult {
         return try {
-            Log.d(TAG, "🔵 [Register] Starting registration for: $email")
             _authState.value = AuthState.Loading
 
-            val existingUser = userDao.getUserByEmail(email)
-            if (existingUser != null) {
-                Log.w(TAG, "❌ Email already exists: $email")
-                return AuthResult.Error("Email already registered")
-            }
-
-            if (password.length < 6) {
-                Log.w(TAG, "❌ Password too short")
-                return AuthResult.Error("Password must be at least 6 characters")
-            }
-
-            val passwordHash = PasswordUtil.hashPassword(password)
-            val userEntity = UserEntity(
-                email = email,
-                name = userName,
-                passwordHash = passwordHash,
-                createdAt = System.currentTimeMillis(),
-                isAdmin = false
-            )
-
-            userDao.insertUser(userEntity)
-            Log.d(TAG, "✅ User inserted into database: $userName")
-
+            // TODO: Crear cuenta en Firebase
+            // Por ahora, crear cuenta local
             val user = UserPreferences(
-                userId = email,
+                userId = UUID.randomUUID().toString(),
                 userName = userName,
                 userEmail = email,
                 isLoggedIn = true,
-                isAdmin = false,
-                accountCreatedAt = userEntity.createdAt
+                isAdmin = false
             )
 
             _currentUser.value = user
             _authState.value = AuthState.Success(user)
-            Log.d(TAG, "✅ User registered successfully: $userName")
 
+            Log.d(TAG, "✅ User registered: $userName")
             AuthResult.Success(user)
 
         } catch (e: Exception) {
-            Log.e(TAG, "❌ Registration error: ${e.message}", e)
+            Log.e(TAG, "❌ Registration error", e)
             _authState.value = AuthState.Error(e.message ?: "Registration failed")
             AuthResult.Error(e.message ?: "Registration failed")
         }
@@ -163,6 +134,9 @@ class AuthRepository(private val context: Context) {
         try {
             Log.d(TAG, "🔓 Logging out user: ${_currentUser.value?.userName}")
 
+            // TODO: Limpiar Firebase session
+
+            // Crear nuevo usuario guest
             val guestUser = createGuestUser()
             _currentUser.value = guestUser
             _authState.value = AuthState.Success(guestUser)
@@ -175,7 +149,8 @@ class AuthRepository(private val context: Context) {
     }
 
     /**
-     * Sincronizar datos
+     * Sincronizar datos con Firebase
+     * Solo si el usuario está logueado
      */
     suspend fun syncData(): SyncResult {
         val user = _currentUser.value
@@ -186,8 +161,15 @@ class AuthRepository(private val context: Context) {
 
         return try {
             Log.d(TAG, "🔄 Syncing data for user: ${user.userName}")
-            // TODO: Implementar sincronización
+
+            // TODO: Sincronizar con Firebase
+            // - Playlists
+            // - Favorites
+            // - Recently played
+            // - Statistics
+
             SyncResult.Success
+
         } catch (e: Exception) {
             Log.e(TAG, "❌ Sync error", e)
             SyncResult.Error(e.message ?: "Sync failed")
@@ -208,12 +190,29 @@ class AuthRepository(private val context: Context) {
         _currentUser.value = updatedUser
         _authState.value = AuthState.Success(updatedUser)
 
+        // TODO: Guardar en DataStore
+        // TODO: Sincronizar con Firebase si está logueado
+
         return true
     }
 
-    fun isAdmin(): Boolean = _currentUser.value?.isAdmin == true
-    fun isLoggedIn(): Boolean = _currentUser.value?.isLoggedIn == true
+    /**
+     * Verificar si el usuario es admin
+     */
+    fun isAdmin(): Boolean {
+        return _currentUser.value?.isAdmin == true
+    }
 
+    /**
+     * Verificar si el usuario está logueado
+     */
+    fun isLoggedIn(): Boolean {
+        return _currentUser.value?.isLoggedIn == true
+    }
+
+    /**
+     * Crear usuario guest por defecto
+     */
     private fun createGuestUser(): UserPreferences {
         return UserPreferences(
             userId = null,
@@ -225,18 +224,26 @@ class AuthRepository(private val context: Context) {
     }
 }
 
-// Estados y resultados (sin cambios)
+/**
+ * Estados de autenticación
+ */
 sealed class AuthState {
     object Loading : AuthState()
     data class Success(val user: UserPreferences) : AuthState()
     data class Error(val message: String) : AuthState()
 }
 
+/**
+ * Resultado de operaciones de auth
+ */
 sealed class AuthResult {
     data class Success(val user: UserPreferences) : AuthResult()
     data class Error(val message: String) : AuthResult()
 }
 
+/**
+ * Resultado de sincronización
+ */
 sealed class SyncResult {
     object Success : SyncResult()
     object NotLoggedIn : SyncResult()

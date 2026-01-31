@@ -1,90 +1,97 @@
 package com.example.music.data.model
 
+import kotlinx.serialization.Serializable
+
+/**
+ * Modelo de datos para las preferencias del usuario
+ * Se guarda localmente con DataStore
+ * Se sincroniza con Firebase si el usuario inicia sesión
+ */
+@Serializable
 data class UserPreferences(
-    // Account
-    val userId: String? = null,
-    val userName: String? = null,
+    // === ACCOUNT ===
+    val userId: String? = null,  // null = guest, UUID = usuario local, email@domain = Firebase
+    val userName: String = "Guest",
     val userEmail: String? = null,
     val isLoggedIn: Boolean = false,
-    val isAdmin: Boolean = false,
-    val accountType: AccountType = AccountType.FREE,
+    val isAdmin: Boolean = false, // ✅ Usuario desarrollador con permisos especiales
+    val profileImageUrl: String? = null,
+    val accountCreatedAt: Long = System.currentTimeMillis(),
+    val lastSyncTimestamp: Long = 0,
 
-    // Appearance
-    val isDarkTheme: Boolean = false,
-    val useDynamicColors: Boolean = true,
-    val themeColor: String = "blue",
-    val gridColumns: Int = 2,
-    val showAlbumArtInApp: Boolean = true,
+    // === STATISTICS ===
+    val totalSongsPlayed: Long = 0,
+    val totalPlaybackTime: Long = 0, // milisegundos
+    val favoriteGenre: String? = null,
+    val mostPlayedSong: String? = null,
+    val songsDownloaded: Int = 0,
+    val playlistsCreated: Int = 0,
+
+    // === APPEARANCE ===
+    val isDarkTheme: Boolean = true,
+    val accentColor: AccentColor = AccentColor.CYAN,
+    val fontSize: FontSize = FontSize.MEDIUM,
     val enableAnimations: Boolean = true,
 
-    // Audio
+    // === PLAYBACK ===
     val audioQuality: AudioQuality = AudioQuality.HIGH,
-    val streamingQuality: AudioQuality = AudioQuality.NORMAL,
-    val downloadQuality: AudioQuality = AudioQuality.HIGH,
+    val streamingQuality: AudioQuality = AudioQuality.NORMAL, // Calidad para streaming online
+    val downloadQuality: AudioQuality = AudioQuality.HIGH, // Calidad para descargas
+    val crossfadeDuration: Int = 0, // 0-12 segundos
     val gaplessPlayback: Boolean = true,
     val normalizeVolume: Boolean = false,
     val equalizerPreset: EqualizerPreset = EqualizerPreset.FLAT,
-    val crossfadeDuration: Int = 0,
 
-    // Storage
-    val maxCacheSize: Int = 500,
-    val autoDownloadSongs: Boolean = false,
+    // === DOWNLOADS ===
     val downloadOnlyOnWifi: Boolean = true,
     val autoDownloadFavorites: Boolean = false,
-    val autoDeleteCache: Boolean = true,
+    val maxCacheSize: Int = 500, // MB
+    val autoDeleteCache: Boolean = true, // Eliminar cache antiguo automáticamente
+    val cacheLocation: String = "internal", // "internal" o "external"
 
-    // Notifications
+    // === NOTIFICATIONS ===
     val showNotifications: Boolean = true,
-    val showLockScreenControls: Boolean = true,
-    val showAlbumArtInNotification: Boolean = true,
-    val useMediaButtons: Boolean = true,
     val showPlaybackControls: Boolean = true,
     val showAlbumArt: Boolean = true,
 
-    // Privacy
-    val saveListenHistory: Boolean = true,
-    val saveSearchHistory: Boolean = true,
-    val sendAnonymousUsageStats: Boolean = false,
-    val sendAnonymousStats: Boolean = false,
-
-    // Stats
-    val totalSongsPlayed: Int = 0,
-    val totalPlaybackTime: Long = 0L,
-    val playlistsCreated: Int = 0,
-    val accountCreatedAt: Long = System.currentTimeMillis(),
-    val lastSyncTimestamp: Long? = null,
-
-    // Advanced
+    // === ADVANCED (Solo Admin) ===
     val developerMode: Boolean = false,
     val showDebugInfo: Boolean = false,
     val allowExperimentalFeatures: Boolean = false
 )
 
-enum class AccountType {
-    FREE,
-    PREMIUM,
-    ADMIN,
-    LOCAL,  // Agregar
-    GUEST   // Agregar
+enum class AccentColor(val hex: String, val displayName: String) {
+    CYAN("#00D9FF", "Cyan"),
+    PURPLE("#9D4EDD", "Purple"),
+    GREEN("#06FFA5", "Green"),
+    PINK("#FF006E", "Pink"),
+    ORANGE("#FF9E00", "Orange"),
+    RED("#EF233C", "Red")
 }
 
-enum class AudioQuality(val displayName: String) {
-    LOW("Low (96 kbps)"),
-    NORMAL("Normal (128 kbps)"),
-    HIGH("High (256 kbps)"),
-    VERY_HIGH("Very High (320 kbps)")
+enum class FontSize(val scale: Float, val displayName: String) {
+    SMALL(0.9f, "Small"),
+    MEDIUM(1.0f, "Medium"),
+    LARGE(1.1f, "Large"),
+    EXTRA_LARGE(1.2f, "Extra Large")
+}
+
+enum class AudioQuality(val bitrate: Int, val displayName: String) {
+    LOW(96, "Low (96kbps) - Saves data"),
+    NORMAL(128, "Normal (128kbps)"),
+    HIGH(256, "High (256kbps)"),
+    EXTREME(320, "Extreme (320kbps) - Best quality")
 }
 
 enum class EqualizerPreset(val displayName: String) {
     FLAT("Flat"),
     ACOUSTIC("Acoustic"),
-    BASS_BOOST("Bass Boost"),
+    BASS_BOOSTER("Bass Booster"),
+    BASS_REDUCER("Bass Reducer"),
     CLASSICAL("Classical"),
     DANCE("Dance"),
     DEEP("Deep"),
     ELECTRONIC("Electronic"),
-    FOLK("Folk"),
-    HEAVY_METAL("Heavy Metal"),
     HIP_HOP("Hip Hop"),
     JAZZ("Jazz"),
     LATIN("Latin"),
@@ -96,15 +103,37 @@ enum class EqualizerPreset(val displayName: String) {
     ROCK("Rock"),
     SMALL_SPEAKERS("Small Speakers"),
     SPOKEN_WORD("Spoken Word"),
-    TREBLE_BOOST("Treble Boost"),
+    TREBLE_BOOSTER("Treble Booster"),
+    TREBLE_REDUCER("Treble Reducer"),
     VOCAL_BOOSTER("Vocal Booster")
 }
 
-
-enum class AccentColor {
-    BLUE, RED, GREEN, PURPLE, ORANGE, PINK
+/**
+ * Tipo de cuenta de usuario
+ */
+enum class AccountType {
+    GUEST,      // Sin login - datos se pierden al desinstalar
+    LOCAL,      // Con email/password - sincroniza con Firebase
+    ADMIN       // Desarrollador - acceso a features experimentales
 }
 
-enum class FontSize {
-    SMALL, MEDIUM, LARGE, EXTRA_LARGE
+/**
+ * Extensión para obtener el tipo de cuenta
+ */
+fun UserPreferences.getAccountType(): AccountType {
+    return when {
+        isAdmin -> AccountType.ADMIN
+        isLoggedIn -> AccountType.LOCAL
+        else -> AccountType.GUEST
+    }
+}
+
+/**
+ * Credenciales de Admin (para desarrollo)
+ * ⚠️ En producción, esto debe estar en un servidor seguro
+ */
+object AdminCredentials {
+    const val ADMIN_EMAIL = "admin@musicapp.dev"
+    const val ADMIN_PASSWORD = "MusicApp2024!" // ⚠️ Cambiar en producción
+    const val ADMIN_USERNAME = "Developer"
 }

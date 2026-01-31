@@ -1,4 +1,4 @@
-package com.example.music.ui.screens
+package com.example.music.ui.theme.screens
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
@@ -11,6 +11,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material3.*
@@ -41,11 +43,11 @@ fun SearchScreen(
     isSearching: Boolean,
     onSongClick: (Song) -> Unit,
     onStreamingSongClick: (StreamingSong) -> Unit,
-    // ✅ QUITAR PARÁMETROS DE FAVORITOS
+    // ✅ SEPARAR FAVORITOS: Local vs Streaming
     isFavorite: (Long) -> Boolean = { false },
     onToggleFavorite: (Song) -> Unit = {},
-    isStreamingFavorite: (String) -> Boolean = { false },
-    onToggleStreamingFavorite: (StreamingSong) -> Unit = {}
+    isStreamingFavorite: (String) -> Boolean = { false },  // ✅ NUEVO: Para StreamingSong
+    onToggleStreamingFavorite: (StreamingSong) -> Unit = {}  // ✅ NUEVO
 ) {
     Column(
         modifier = Modifier.fillMaxSize()
@@ -251,19 +253,23 @@ fun SearchScreen(
                     }
 
                     if (isOnlineMode) {
-                        // ✅ STREAMING RESULTS SIN FAVORITOS
+                        // ✅ STREAMING RESULTS CON FAVORITOS
                         items(streamingSearchResults, key = { it.id }) { streamingSong ->
                             StreamingSearchResultItem(
                                 streamingSong = streamingSong,
-                                onClick = { onStreamingSongClick(streamingSong) }
+                                onClick = { onStreamingSongClick(streamingSong) },
+                                isFavorite = isStreamingFavorite(streamingSong.id),  // ✅
+                                onToggleFavorite = { onToggleStreamingFavorite(streamingSong) }  // ✅
                             )
                         }
                     } else {
-                        // ✅ LOCAL RESULTS SIN FAVORITOS
+                        // ✅ LOCAL RESULTS CON FAVORITOS
                         items(localSearchResults, key = { it.id }) { song ->
                             SearchResultItem(
                                 song = song,
-                                onClick = { onSongClick(song) }
+                                onClick = { onSongClick(song) },
+                                isFavorite = isFavorite(song.id),  // ✅
+                                onToggleFavorite = { onToggleFavorite(song) }  // ✅
                             )
                         }
                     }
@@ -319,11 +325,13 @@ fun RotatingVinyl() {
     }
 }
 
-// ✅ SIN FAVORITOS
 @Composable
 fun StreamingSearchResultItem(
     streamingSong: StreamingSong,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    // ✅ AGREGAR FAVORITOS
+    isFavorite: Boolean = false,
+    onToggleFavorite: () -> Unit = {}
 ) {
     var clickEnabled by remember { mutableStateOf(true) }
     val scope = rememberCoroutineScope()
@@ -350,6 +358,7 @@ fun StreamingSearchResultItem(
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        // ✅ Thumbnail con fondo semi-transparente y ícono por defecto
         Box(
             modifier = Modifier
                 .size(56.dp)
@@ -357,6 +366,7 @@ fun StreamingSearchResultItem(
                 .background(Color(0xFF00D9FF).copy(alpha = 0.2f)),
             contentAlignment = Alignment.Center
         ) {
+            // ✅ SIEMPRE mostrar el ícono de fondo
             Icon(
                 imageVector = Icons.Default.MusicNote,
                 contentDescription = null,
@@ -364,6 +374,7 @@ fun StreamingSearchResultItem(
                 modifier = Modifier.size(32.dp)
             )
 
+            // ✅ Imagen encima (si existe)
             if (streamingSong.thumbnailUrl != null) {
                 AsyncImage(
                     model = streamingSong.thumbnailUrl,
@@ -395,6 +406,21 @@ fun StreamingSearchResultItem(
             )
         }
 
+        // ✅ BOTÓN DE FAVORITOS
+        IconButton(
+            onClick = onToggleFavorite,
+            modifier = Modifier.size(40.dp)
+        ) {
+            Icon(
+                imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                contentDescription = if (isFavorite) "Remove from favorites" else "Add to favorites",
+                tint = if (isFavorite) Color(0xFFFF006E) else Color.White.copy(alpha = 0.5f),
+                modifier = Modifier.size(20.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.width(8.dp))
+
         Text(
             text = formatDuration(streamingSong.duration),
             fontSize = 12.sp,
@@ -403,11 +429,12 @@ fun StreamingSearchResultItem(
     }
 }
 
-// ✅ SIN FAVORITOS
 @Composable
 fun SearchResultItem(
     song: Song,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    isFavorite: Boolean = false,
+    onToggleFavorite: () -> Unit = {}
 ) {
     var clickEnabled by remember { mutableStateOf(true) }
     val scope = rememberCoroutineScope()
@@ -478,6 +505,21 @@ fun SearchResultItem(
                 overflow = TextOverflow.Ellipsis
             )
         }
+
+        // ✅ BOTÓN DE FAVORITOS
+        IconButton(
+            onClick = onToggleFavorite,
+            modifier = Modifier.size(40.dp)
+        ) {
+            Icon(
+                imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                contentDescription = if (isFavorite) "Remove from favorites" else "Add to favorites",
+                tint = if (isFavorite) Color(0xFFFF006E) else Color.White.copy(alpha = 0.5f),
+                modifier = Modifier.size(20.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.width(8.dp))
 
         Text(
             text = formatDuration(song.duration),

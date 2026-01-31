@@ -848,10 +848,4 @@ class MusicPlayerViewModel(
         }
         Log.d(TAG, "🧹 ViewModel limpiado")
     }
-    fun clearSearchHistory() {
-        // Limpia el historial de búsqueda
-        _searchQuery.value = ""
-        // Si tienes una lista de historial, límpiala también
-        // _searchHistory.value = emptyList()
-    }
 }

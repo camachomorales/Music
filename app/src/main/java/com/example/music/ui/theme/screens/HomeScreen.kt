@@ -1,4 +1,4 @@
-package com.example.music.ui.screens
+package com.example.music.ui.theme.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -9,7 +9,10 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,24 +24,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.music.data.model.AppMode
 import com.example.music.data.model.Song
 import com.example.music.data.model.StreamingSong
-import com.example.music.ui.viewmodel.HomeViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.*
-
-/**
- * ✅ UBICACIÓN: app/src/main/java/com/example/music/ui/screens/HomeScreen.kt
- *
- * HomeScreen con soporte completo para:
- * - Favoritos locales y streaming
- * - Gestión de sesión
- * - Sincronización automática
- */
 
 @Composable
 fun HomeScreen(
@@ -51,17 +43,19 @@ fun HomeScreen(
     onSearch: (String) -> Unit,
     searchQuery: String = "",
     isSearching: Boolean = false,
-    viewModel: HomeViewModel = hiltViewModel() // ✅ ViewModel con Hilt
+    // ✅ SEPARAR FAVORITOS: Local vs Streaming
+    isFavorite: (Long) -> Boolean = { false },
+    onToggleFavorite: (Song) -> Unit = {},
+    isStreamingFavorite: (String) -> Boolean = { false },  // ✅ NUEVO: Para StreamingSong
+    onToggleStreamingFavorite: (StreamingSong) -> Unit = {}  // ✅ NUEVO
 ) {
+
     val isOnlineMode = appMode == AppMode.STREAMING
     val greeting = getGreeting()
+
+    // ✅ Determinar si hay resultados de búsqueda activos
     val hasSearchResults = searchQuery.isNotBlank() && streamingSongs.isNotEmpty()
 
-    // ✅ Estados de favoritos del ViewModel
-    val favoriteLocalSongs by viewModel.favoriteLocalSongs.collectAsState()
-    val favoriteStreamingSongs by viewModel.favoriteStreamingSongs.collectAsState()
-    val isLoggedIn by viewModel.isLoggedIn.collectAsState()
-    val userSession by viewModel.userSession.collectAsState()
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -77,50 +71,23 @@ fun HomeScreen(
             Spacer(modifier = Modifier.statusBarsPadding())
 
             Column {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = greeting,
-                            fontSize = 32.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
-                        Text(
-                            text = if (isOnlineMode) "🌐 Streaming Mode" else "📱 Local Music",
-                            fontSize = 14.sp,
-                            color = Color(0xFF00D9FF),
-                            modifier = Modifier.padding(top = 4.dp)
-                        )
-                    }
-
-                    // ✅ Indicador de sesión
-                    if (isLoggedIn) {
-                        Column(horizontalAlignment = Alignment.End) {
-                            Icon(
-                                imageVector = Icons.Default.AccountCircle,
-                                contentDescription = "Logged in",
-                                tint = Color(0xFF00D9FF),
-                                modifier = Modifier.size(32.dp)
-                            )
-                            userSession.name?.let { name ->
-                                Text(
-                                    text = name.take(15),
-                                    fontSize = 12.sp,
-                                    color = Color.White.copy(alpha = 0.7f)
-                                )
-                            }
-                        }
-                    }
-                }
+                Text(
+                    text = greeting,
+                    fontSize = 32.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+                Text(
+                    text = if (isOnlineMode) "🌐 Streaming Mode" else "📱 Local Music",
+                    fontSize = 14.sp,
+                    color = Color(0xFF00D9FF),
+                    modifier = Modifier.padding(top = 4.dp)
+                )
             }
         }
 
         if (isOnlineMode) {
-            // ========== MODO STREAMING ==========
+            // ✅ MOSTRAR RESULTADOS DE BÚSQUEDA SI HAY QUERY
             if (hasSearchResults) {
                 item {
                     Text(
@@ -138,19 +105,18 @@ fun HomeScreen(
                     )
                 }
 
-                // ✅ Resultados de búsqueda con favoritos
+                // ✅ Lista de resultados de búsqueda CON FAVORITOS
                 items(streamingSongs) { streamingSong ->
                     StreamingSongListItem(
                         streamingSong = streamingSong,
-                        onClick = {
-                            onStreamingSongClick(streamingSong)
-                            viewModel.addSearchQuery(searchQuery)
-                        },
-                        isFavorite = favoriteStreamingSongs.contains(streamingSong.id),
-                        onToggleFavorite = { viewModel.toggleStreamingSongFavorite(streamingSong) }
+                        onClick = onStreamingSongClick,
+                        isFavorite = isStreamingFavorite(streamingSong.id),  // ✅
+                        onToggleFavorite = { onToggleStreamingFavorite(streamingSong) }  // ✅
                     )
                 }
-            } else if (isSearching) {
+            }
+            // ✅ MOSTRAR LOADING SI ESTÁ BUSCANDO
+            else if (isSearching) {
                 item {
                     Box(
                         modifier = Modifier.fillMaxWidth().height(200.dp),
@@ -170,8 +136,9 @@ fun HomeScreen(
                         }
                     }
                 }
-            } else {
-                // Contenido normal (Trending)
+            }
+            // ✅ MOSTRAR CONTENIDO NORMAL (TRENDING) SOLO SI NO HAY BÚSQUEDA
+            else {
                 item {
                     Text(
                         text = "Trending Now",
@@ -241,18 +208,20 @@ fun HomeScreen(
                         )
                     }
 
+                    // ✅ TODOS los streamingSongs CON FAVORITOS
                     items(streamingSongs.drop(5)) { streamingSong ->
                         StreamingSongListItem(
                             streamingSong = streamingSong,
                             onClick = onStreamingSongClick,
-                            isFavorite = favoriteStreamingSongs.contains(streamingSong.id),
-                            onToggleFavorite = { viewModel.toggleStreamingSongFavorite(streamingSong) }
+                            isFavorite = isStreamingFavorite(streamingSong.id),  // ✅
+                            onToggleFavorite = { onToggleStreamingFavorite(streamingSong) }  // ✅
                         )
                     }
                 }
             }
+
         } else {
-            // ========== MODO LOCAL ==========
+            // MODO OFFLINE (canciones locales)
             item {
                 Text(
                     text = "Recently played",
@@ -294,13 +263,13 @@ fun HomeScreen(
                     )
                 }
 
-                // ✅ Canciones locales con favoritos
+                // ✅ Canciones locales CON FAVORITOS
                 items(songs.take(50)) { song ->
                     SongItemCard(
                         song = song,
                         onClick = { onSongClick(song) },
-                        isFavorite = favoriteLocalSongs.contains(song.id),
-                        onToggleFavorite = { viewModel.toggleLocalSongFavorite(song) }
+                        isFavorite = isFavorite(song.id),  // ✅
+                        onToggleFavorite = { onToggleFavorite(song) }  // ✅
                     )
                 }
             } else {
@@ -328,8 +297,6 @@ fun HomeScreen(
     }
 }
 
-// ==================== COMPONENTES ====================
-
 @Composable
 private fun StreamingSongCard(
     streamingSong: StreamingSong,
@@ -344,6 +311,7 @@ private fun StreamingSongCard(
             .clickable { onClick(streamingSong) },
         contentAlignment = Alignment.BottomStart
     ) {
+        // ✅ Mostrar imagen si existe
         streamingSong.thumbnailUrl?.let { url ->
             AsyncImage(
                 model = url,
@@ -352,6 +320,7 @@ private fun StreamingSongCard(
             )
         }
 
+        // Gradiente oscuro en la parte inferior
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -388,6 +357,7 @@ private fun StreamingSongCard(
 private fun StreamingSongListItem(
     streamingSong: StreamingSong,
     onClick: (StreamingSong) -> Unit,
+    // ✅ AGREGAR FAVORITOS PARA STREAMING
     isFavorite: Boolean = false,
     onToggleFavorite: () -> Unit = {}
 ) {
@@ -416,6 +386,7 @@ private fun StreamingSongListItem(
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        // ✅ Mostrar thumbnail si existe
         if (streamingSong.thumbnailUrl != null) {
             AsyncImage(
                 model = streamingSong.thumbnailUrl,
@@ -461,7 +432,7 @@ private fun StreamingSongListItem(
             )
         }
 
-        // ✅ BOTÓN DE FAVORITOS
+        // ✅ BOTÓN DE FAVORITOS PARA STREAMING
         IconButton(
             onClick = onToggleFavorite,
             modifier = Modifier.size(40.dp)
@@ -632,19 +603,8 @@ private fun SongItemCard(
                 modifier = Modifier.size(20.dp)
             )
         }
-
-        Spacer(modifier = Modifier.width(8.dp))
-
-        Icon(
-            imageVector = Icons.Default.PlayArrow,
-            contentDescription = "Play",
-            tint = Color(0xFF00D9FF).copy(alpha = 0.6f),
-            modifier = Modifier.size(24.dp)
-        )
     }
 }
-
-// ==================== UTILIDADES ====================
 
 private fun getGreeting(): String {
     return when (Calendar.getInstance().get(Calendar.HOUR_OF_DAY)) {
@@ -662,55 +622,3 @@ private fun getRandomColor(): Color {
     return colors.random()
 }
 
-
-@Preview(showBackground = true)
-@Composable
-fun HomeScreenPreview() {
-    HomeScreen(
-        songs = listOf(
-            Song(
-                id = 1L,
-                title = "Local Song 1",
-                artist = "Local Artist",
-                album = "Best Hits",
-                duration = 180000L,
-                path = "/storage/emulated/0/Music/song1.mp3"
-            ),
-            Song(
-                id = 2L,
-                title = "Local Song 2",
-                artist = "Local Artist 2",
-                album = "Best Hits 2",
-                duration = 210000L,
-                path = "/storage/emulated/0/Music/song2.mp3"
-            )
-        ),
-        streamingSongs = listOf(
-            StreamingSong(
-                id = "123",
-                title = "Anti-Hero",
-                artist = "Taylor Swift",
-                thumbnailUrl = "https://via.placeholder.com/56x56/1A4A5A/00D9FF?text=T",
-                duration = 200000L,
-                provider = MusicProviderType.YOUTUBE_MUSIC  // ✅ CAMBIADO
-            ),
-            StreamingSong(
-                id = "456",
-                title = "Monaco",
-                artist = "Bad Bunny",
-                thumbnailUrl = "https://via.placeholder.com/56x56/1A4A5A/00D9FF?text=M",
-                duration = 190000L,
-                provider = MusicProviderType.YOUTUBE_MUSIC  // ✅ CAMBIADO
-            )
-        ),
-        appMode = AppMode.STREAMING,
-        onSongClick = {},
-        onStreamingSongClick = {},
-        onToggleMode = {},
-        onSearch = {},
-        isFavorite = { false },
-        onToggleFavorite = {},
-        isStreamingFavorite = { false },
-        onToggleStreamingFavorite = {}
-    )
-}

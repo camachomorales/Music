@@ -1,4 +1,4 @@
-package com.example.music.ui.screens.SettingsScreen
+package com.example.music.ui.theme.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -21,8 +21,6 @@ import androidx.compose.ui.unit.sp
 import com.example.music.data.model.AudioQuality
 import com.example.music.data.model.EqualizerPreset
 import com.example.music.data.model.UserPreferences
-import com.example.music.ui.screens.SettingsCard
-import com.example.music.ui.screens.SettingsCardWithToggle
 
 @Composable
 fun PlaybackSettingsScreen(

@@ -1,4 +1,4 @@
-package com.example.music.ui.screens
+package com.example.music.ui.theme.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable

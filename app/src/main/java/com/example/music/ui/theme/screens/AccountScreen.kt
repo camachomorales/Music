@@ -16,7 +16,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -440,7 +439,7 @@ fun AccountScreen(
 @Composable
 private fun StatCard(
     modifier: Modifier = Modifier,
-    icon: ImageVector,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
     value: String,
     label: String
 ) {
@@ -622,25 +621,19 @@ private fun LoginDialog(
     )
 }
 
-
 @Composable
 private fun RegisterDialog(
     onDismiss: () -> Unit,
     onRegister: (String, String, String) -> Unit,
     isLoading: Boolean
 ) {
-    android.util.Log.d("DEBUG_DIALOG", "🟢 RegisterDialog renderizado, isLoading=$isLoading")
-
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
 
     AlertDialog(
-        onDismissRequest = {
-            android.util.Log.d("DEBUG_DIALOG", "❌ Dialog dismissed")
-            onDismiss()
-        },
+        onDismissRequest = onDismiss,
         containerColor = Color(0xFF0A2F3D),
         shape = RoundedCornerShape(20.dp),
         title = {
@@ -663,10 +656,7 @@ private fun RegisterDialog(
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = name,
-                    onValueChange = {
-                        name = it
-                        android.util.Log.d("DEBUG_DIALOG", "📝 Name: $it")
-                    },
+                    onValueChange = { name = it },
                     label = { Text("Name") },
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
@@ -683,10 +673,7 @@ private fun RegisterDialog(
 
                 OutlinedTextField(
                     value = email,
-                    onValueChange = {
-                        email = it
-                        android.util.Log.d("DEBUG_DIALOG", "📧 Email: $it")
-                    },
+                    onValueChange = { email = it },
                     label = { Text("Email") },
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
@@ -703,10 +690,7 @@ private fun RegisterDialog(
 
                 OutlinedTextField(
                     value = password,
-                    onValueChange = {
-                        password = it
-                        android.util.Log.d("DEBUG_DIALOG", "🔐 Password length: ${it.length}")
-                    },
+                    onValueChange = { password = it },
                     label = { Text("Password") },
                     singleLine = true,
                     visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
@@ -733,26 +717,15 @@ private fun RegisterDialog(
             }
         },
         confirmButton = {
-            val isEnabled = name.isNotBlank() && email.isNotBlank() && password.length >= 6 && !isLoading
-
-            android.util.Log.d("DEBUG_DIALOG", "🔘 Button state: enabled=$isEnabled (name=$name, email=$email, pwdLen=${password.length}, loading=$isLoading)")
-
             Button(
-                onClick = {
-                    android.util.Log.d("DEBUG_DIALOG", "✅ CREATE BUTTON CLICKED!")
-                    android.util.Log.d("DEBUG_DIALOG", "📤 Datos: email=$email, name=$name, passwordLength=${password.length}")
-                    android.util.Log.d("DEBUG_DIALOG", "📤 Llamando onRegister...")
-                    onRegister(email, password, name)
-                    android.util.Log.d("DEBUG_DIALOG", "✅ onRegister llamado exitosamente")
-                },
-                enabled = isEnabled,
+                onClick = { onRegister(email, password, name) },
+                enabled = name.isNotBlank() && email.isNotBlank() && password.length >= 6 && !isLoading,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF00D9FF)
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 if (isLoading) {
-                    android.util.Log.d("DEBUG_DIALOG", "⏳ Mostrando loading...")
                     CircularProgressIndicator(
                         modifier = Modifier.size(16.dp),
                         color = Color.White,
@@ -764,10 +737,7 @@ private fun RegisterDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = {
-                android.util.Log.d("DEBUG_DIALOG", "❌ Cancel clicked")
-                onDismiss()
-            }) {
+            TextButton(onClick = onDismiss) {
                 Text("Cancel", color = Color.White.copy(alpha = 0.7f))
             }
         }
@@ -787,5 +757,3 @@ private fun formatDate(timestamp: Long): String {
     val sdf = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
     return sdf.format(Date(timestamp))
 }
-
-
