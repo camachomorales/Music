@@ -3,9 +3,10 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     id("kotlin-parcelize")
-    alias(libs.plugins.google.gms.google.services) // ✅ Cambiado
+    alias(libs.plugins.google.gms.google.services)
     id("org.jetbrains.kotlin.plugin.serialization") version "2.2.21"
-    alias(libs.plugins.ksp) // ✅ Cambiado - usar alias
+    alias(libs.plugins.ksp)
+    id("com.google.dagger.hilt.android") version "2.51.1"
 }
 
 android {
@@ -124,7 +125,14 @@ dependencies {
     // Room - ✅ USAR LOS ALIAS DEL TOML
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
+    implementation(libs.androidx.room.common.jvm)
+    implementation(libs.transport.runtime)
     ksp(libs.room.compiler)
+
+    // ✅ HILT - AGREGAR ESTAS LÍNEAS
+    implementation("com.google.dagger:hilt-android:2.51.1")
+    ksp("com.google.dagger:hilt-compiler:2.51.1")
+    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")

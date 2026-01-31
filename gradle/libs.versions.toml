@@ -48,6 +48,8 @@ mediaVersion = "1.6.0"
 animationCore = "1.9.4"
 ksp = "2.0.21-1.0.25"
 room = "2.6.1"
+roomCommonJvm = "2.8.4"
+transportRuntime = "4.0.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -78,6 +80,8 @@ androidx-compose-animation-core = { group = "androidx.compose.animation", name =
 room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
 room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
 room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
+androidx-room-common-jvm = { group = "androidx.room", name = "room-common-jvm", version.ref = "roomCommonJvm" }
+transport-runtime = { group = "com.google.android.datatransport", name = "transport-runtime", version.ref = "transportRuntime" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
