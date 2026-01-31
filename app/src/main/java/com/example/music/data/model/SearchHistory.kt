@@ -12,3 +12,11 @@ data class SearchHistory(
     val isLocal: Boolean = true,
     val timestamp: Long = System.currentTimeMillis()
 )
+
+@Entity(tableName = "search_history")
+data class SearchHistory(
+    @PrimaryKey(autoGenerate = true)
+    val id: Int = 0,
+    val query: String,
+    val timestamp: Long = System.currentTimeMillis()
+)

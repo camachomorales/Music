@@ -124,3 +124,28 @@ interface SearchHistoryDao {
     @Query("UPDATE search_history SET userId = :userId, isLocal = 0 WHERE userId IS NULL")
     suspend fun migrateToUser(userId: String)
 }
+
+@Database(
+    entities = [
+        Playlist::class,
+        Song::class,
+        SearchHistory::class
+    ],
+    version = 1,
+    exportSchema = false
+)
+@Database(
+    entities = [
+        Playlist::class,
+        Song::class,
+        SearchHistory::class
+    ],
+    version = 1,
+    exportSchema = false
+)
+@TypeConverters(Converters::class)
+abstract class AppDatabase : RoomDatabase() {
+    abstract fun playlistDao(): PlaylistDao
+    abstract fun songDao(): SongDao
+    abstract fun searchHistoryDao(): SearchHistoryDao
+}

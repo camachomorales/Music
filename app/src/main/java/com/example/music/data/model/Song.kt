@@ -1,16 +1,21 @@
 package com.example.music.data.model
 
-data class Song(
-    val id: Long,
-    val title: String,
-    val artist: String,
-    val album: String,
-    val duration: Long,
-    val path: String,
-    val albumArtUri: String? = null,
-    val isStreaming: Boolean = false,
-    // ✅ NUEVO: Preservar información de streaming original
-    val streamingId: String? = null,        // ID original de YouTube/JioSaavn (ej: "8SbUC-UaAxE")
-    val streamingProvider: String? = null   // "INNERTUBE", "JIOSAAVN", etc.
-)
+import android.net.Uri
+import android.os.Parcelable
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+import kotlinx.parcelize.Parcelize
 
+@Entity(tableName = "songs")
+data class Song(
+    @PrimaryKey
+    val id: String,
+    val title: String,
+    val artist: String = "",
+    val album: String = "",
+    val duration: Long = 0L,
+    val uri: Uri? = null,
+    val albumArtUri: Uri? = null,
+    val playlistId: String? = null,
+    val addedAt: Long = System.currentTimeMillis()
+)

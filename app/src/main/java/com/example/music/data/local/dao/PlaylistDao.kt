@@ -7,37 +7,31 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface PlaylistDao {
-    @Query("SELECT * FROM playlists WHERE userId = :userId OR userId IS NULL ORDER BY updatedAt DESC")
-    fun getPlaylists(userId: String?): Flow<List<Playlist>>
+
+    @Query("SELECT * FROM playlists ORDER BY updatedAt DESC")
+    fun getAllPlaylists(): Flow<List<Playlist>>
 
     @Query("SELECT * FROM playlists WHERE id = :playlistId")
     suspend fun getPlaylistById(playlistId: String): Playlist?
 
+    @Query("SELECT * FROM playlists WHERE userId = :userId ORDER BY updatedAt DESC")
+    fun getPlaylistsByUser(userId: String): Flow<List<Playlist>>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(playlist: Playlist)
+    suspend fun insertPlaylist(playlist: Playlist)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertPlaylists(playlists: List<Playlist>)
 
     @Update
-    suspend fun update(playlist: Playlist)
+    suspend fun updatePlaylist(playlist: Playlist)
 
     @Delete
-    suspend fun delete(playlist: Playlist)
+    suspend fun deletePlaylist(playlist: Playlist)
 
-    @Query("DELETE FROM playlists WHERE isLocal = 1 AND userId IS NULL")
-    suspend fun deleteLocalPlaylists()
+    @Query("DELETE FROM playlists WHERE id = :playlistId")
+    suspend fun deletePlaylistById(playlistId: String)
 
-    @Query("UPDATE playlists SET userId = :userId, isLocal = 0 WHERE userId IS NULL")
-    suspend fun migrateToUser(userId: String)
-
-    // Playlist Songs
-    @Query("SELECT * FROM playlist_songs WHERE playlistId = :playlistId ORDER BY position")
-    fun getPlaylistSongs(playlistId: String): Flow<List<PlaylistSong>>
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertPlaylistSong(playlistSong: PlaylistSong)
-
-    @Delete
-    suspend fun deletePlaylistSong(playlistSong: PlaylistSong)
-
-    @Query("DELETE FROM playlist_songs WHERE playlistId = :playlistId")
-    suspend fun deleteAllPlaylistSongs(playlistId: String)
+    @Query("DELETE FROM playlists")
+    suspend fun deleteAllPlaylists()
 }

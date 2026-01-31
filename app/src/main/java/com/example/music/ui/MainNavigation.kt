@@ -39,9 +39,10 @@ import com.example.music.ui.theme.screens.FavoritesScreen
 import com.example.music.ui.theme.screens.PlaylistDetailScreen
 import com.example.music.ui.theme.screens.PlaylistsScreen
 import com.example.music.ui.theme.screens.RecentlyPlayedScreen
-import com.example.music.ui.viewmodel.HomeViewModel
+import com.example.music.viewmodel.HomeViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+
 
 /**
  * ✅ UBICACIÓN: app/src/main/java/com/example/music/ui/theme/MainNavigation.kt
