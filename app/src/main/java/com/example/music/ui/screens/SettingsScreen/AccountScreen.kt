@@ -1,4 +1,4 @@
-package com.example.music.ui.theme.screens
+package com.example.music.ui.screens.SettingsScreen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -94,6 +94,7 @@ fun AccountScreen(
                                 AccountType.ADMIN -> listOf(Color(0xFFFF006E), Color(0xFFFFBE0B))
                                 AccountType.LOCAL -> listOf(Color(0xFF00D9FF), Color(0xFF0099CC))
                                 AccountType.GUEST -> listOf(Color.Gray, Color.DarkGray)
+                                else -> listOf(Color.Gray, Color.DarkGray)
                             }
                         )
                     ),
@@ -104,6 +105,7 @@ fun AccountScreen(
                         AccountType.ADMIN -> Icons.Default.AdminPanelSettings
                         AccountType.LOCAL -> Icons.Default.Person
                         AccountType.GUEST -> Icons.Default.PersonOutline
+                        else -> Icons.Default.PersonOutline
                     },
                     contentDescription = null,
                     tint = Color.White,
@@ -126,6 +128,7 @@ fun AccountScreen(
                         AccountType.ADMIN -> "👑 Developer Account"
                         AccountType.LOCAL -> userPreferences.userEmail ?: "Local Account"
                         AccountType.GUEST -> "Guest Mode"
+                        else -> "Guest Mode"  // ✅ AGREGAR
                     },
                     fontSize = 14.sp,
                     color = Color.White.copy(alpha = 0.7f)

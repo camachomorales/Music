@@ -1,4 +1,4 @@
-package com.example.music.ui.theme.screens
+package com.example.music.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -66,7 +66,7 @@ fun SettingsScreen(
             else
                 "Playing local music from device",
             isEnabled = appMode == AppMode.STREAMING,
-            onToggle = { onToggleMode() }
+            onToggle = { _ -> onToggleMode() }  // ✅ AGREGAR _ ->
         )
 
         // Account Section
@@ -75,12 +75,14 @@ fun SettingsScreen(
                 AccountType.ADMIN -> Icons.Default.AdminPanelSettings
                 AccountType.LOCAL -> Icons.Default.AccountCircle
                 AccountType.GUEST -> Icons.Default.PersonOutline
+                else -> Icons.Default.PersonOutline  // ✅ AGREGAR ESTO
             },
             title = "Account",
             subtitle = when (accountType) {
                 AccountType.ADMIN -> "👑 ${userPreferences.userName} (Developer)"
                 AccountType.LOCAL -> userPreferences.userEmail ?: "Manage account"
                 AccountType.GUEST -> "Sign in to sync your data"
+                else -> "Manage account"  // ✅ AGREGAR ESTO
             },
             onClick = onAccountClick
         )
@@ -115,7 +117,7 @@ fun SettingsScreen(
             title = "Download over mobile data",
             subtitle = "Allow downloads without WiFi",
             isEnabled = !userPreferences.downloadOnlyOnWifi,
-            onToggle = { onToggleDownload() }
+            onToggle = { _ -> onToggleDownload() }  // ✅ AGREGAR _ ->
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -133,7 +135,7 @@ fun SettingsScreen(
             title = "Dark theme",
             subtitle = "Use dark theme throughout the app",
             isEnabled = userPreferences.isDarkTheme,
-            onToggle = { onToggleDarkTheme() }
+            onToggle = { _ -> onToggleDarkTheme() }  // ✅ AGREGAR _ ->
         )
 
         // About
@@ -170,7 +172,7 @@ fun SettingsScreen(
                 title = "Developer Mode",
                 subtitle = "Show debug information",
                 isEnabled = userPreferences.developerMode,
-                onToggle = { /* TODO */ }
+                onToggle = { _ -> /* TODO */ }  // ✅ AGREGAR _ ->
             )
 
             SettingsCardWithToggle(
@@ -178,7 +180,7 @@ fun SettingsScreen(
                 title = "Experimental Features",
                 subtitle = "Enable beta features",
                 isEnabled = userPreferences.allowExperimentalFeatures,
-                onToggle = { /* TODO */ }
+                onToggle = { _ -> /* TODO */ }  // ✅ AGREGAR _ ->
             )
         }
 
@@ -246,6 +248,7 @@ fun SettingsCard(
     }
 }
 
+// ✅ CORRECTO
 @Composable
 fun SettingsCardWithToggle(
     icon: ImageVector,

@@ -137,7 +137,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         savePreferences(current.copy(autoDownloadFavorites = !current.autoDownloadFavorites))
     }
 
-    fun setMaxCacheSize(sizeMB: Int) {
+    fun setMaxCacheSize(sizeMB: Long) {
         val current = _userPreferences.value
         savePreferences(current.copy(maxCacheSize = sizeMB))
     }

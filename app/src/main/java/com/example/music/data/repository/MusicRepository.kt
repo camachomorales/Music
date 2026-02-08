@@ -70,3 +70,65 @@ class MusicRepository(private val context: Context) {
         return songs
     }
 }
+
+
+/**
+ * ✅ UBICACIÓN: app/src/main/java/com/example/music/data/repository/MusicRepositoryExtensions.kt
+ *
+ * Funciones adicionales que deben agregarse a MusicRepository:
+ */
+
+// Agregar estas funciones a tu MusicRepository existente:
+
+/*
+    // ========== SEARCH HISTORY ==========
+    fun getSearchHistory(): Flow<List<String>>
+    suspend fun addSearchQuery(query: String)
+    suspend fun clearSearchHistory()
+
+    // ========== PLAYLISTS ==========
+    fun getPlaylists(): Flow<List<Playlist>>
+    suspend fun createPlaylist(name: String, description: String?)
+
+    // ========== FAVORITOS LOCALES ==========
+    fun getFavoriteLocalSongs(): Flow<List<FavoriteLocalSong>>
+    suspend fun toggleLocalSongFavorite(song: Song)
+
+    // ========== FAVORITOS STREAMING ==========
+    fun getFavoriteStreamingSongs(): Flow<List<FavoriteStreamingSong>>
+    suspend fun toggleStreamingSongFavorite(streamingSong: StreamingSong)
+
+    // ========== SINCRONIZACIÓN ==========
+    suspend fun syncDataOnLogin(userId: String)
+    suspend fun clearLocalData()
+*/
+
+// Modelos de datos para favoritos (agregar a tu carpeta de modelos):
+
+data class FavoriteLocalSong(
+    val id: Long = 0,
+    val songId: Long,
+    val userId: String?,
+    val timestamp: Long = System.currentTimeMillis()
+)
+
+data class FavoriteStreamingSong(
+    val id: Long = 0,
+    val streamingSongId: String,
+    val userId: String?,
+    val timestamp: Long = System.currentTimeMillis()
+)
+
+data class SearchHistoryEntry(
+    val id: Long = 0,
+    val query: String,
+    val timestamp: Long = System.currentTimeMillis()
+)
+
+data class Playlist(
+    val id: String,
+    val name: String,
+    val description: String?,
+    val songs: List<Song> = emptyList(),
+    val createdAt: Long = System.currentTimeMillis()
+)

@@ -60,7 +60,7 @@ class SettingsRepository(private val context: Context) {
         // Downloads
         val DOWNLOAD_ONLY_ON_WIFI = booleanPreferencesKey("download_only_on_wifi")
         val AUTO_DOWNLOAD_FAVORITES = booleanPreferencesKey("auto_download_favorites")
-        val MAX_CACHE_SIZE = intPreferencesKey("max_cache_size")
+        val MAX_CACHE_SIZE = longPreferencesKey("max_cache_size")
         val AUTO_DELETE_CACHE = booleanPreferencesKey("auto_delete_cache")
         val CACHE_LOCATION = stringPreferencesKey("cache_location")
 
@@ -228,7 +228,7 @@ class SettingsRepository(private val context: Context) {
             // Downloads
             downloadOnlyOnWifi = preferences[PreferencesKeys.DOWNLOAD_ONLY_ON_WIFI] ?: true,
             autoDownloadFavorites = preferences[PreferencesKeys.AUTO_DOWNLOAD_FAVORITES] ?: false,
-            maxCacheSize = preferences[PreferencesKeys.MAX_CACHE_SIZE] ?: 500,
+            maxCacheSize = preferences[PreferencesKeys.MAX_CACHE_SIZE] ?: 500L,
             autoDeleteCache = preferences[PreferencesKeys.AUTO_DELETE_CACHE] ?: true,
             cacheLocation = preferences[PreferencesKeys.CACHE_LOCATION] ?: "internal",
 

@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -407,17 +408,12 @@ fun StreamingSearchResultItem(
         }
 
         // ✅ BOTÓN DE FAVORITOS
-        IconButton(
-            onClick = onToggleFavorite,
-            modifier = Modifier.size(40.dp)
-        ) {
-            Icon(
-                imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                contentDescription = if (isFavorite) "Remove from favorites" else "Add to favorites",
-                tint = if (isFavorite) Color(0xFFFF006E) else Color.White.copy(alpha = 0.5f),
-                modifier = Modifier.size(20.dp)
-            )
-        }
+        Icon(
+            imageVector = Icons.Default.PlayArrow,
+            contentDescription = "Play",
+            tint = Color(0xFF00D9FF).copy(alpha = 0.6f),
+            modifier = Modifier.size(24.dp)
+        )
 
         Spacer(modifier = Modifier.width(8.dp))
 
@@ -507,17 +503,12 @@ fun SearchResultItem(
         }
 
         // ✅ BOTÓN DE FAVORITOS
-        IconButton(
-            onClick = onToggleFavorite,
-            modifier = Modifier.size(40.dp)
-        ) {
-            Icon(
-                imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                contentDescription = if (isFavorite) "Remove from favorites" else "Add to favorites",
-                tint = if (isFavorite) Color(0xFFFF006E) else Color.White.copy(alpha = 0.5f),
-                modifier = Modifier.size(20.dp)
-            )
-        }
+        Icon(
+            imageVector = Icons.Default.PlayArrow,
+            contentDescription = "Play",
+            tint = Color(0xFF00D9FF).copy(alpha = 0.6f),
+            modifier = Modifier.size(24.dp)
+        )
 
         Spacer(modifier = Modifier.width(8.dp))
 

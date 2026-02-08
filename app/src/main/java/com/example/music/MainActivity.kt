@@ -15,7 +15,7 @@ import androidx.compose.runtime.getValue
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.music.data.repository.MusicRepository
-import com.example.music.ui.theme.MainNavigation
+import com.example.music.ui.MainNavigation
 import com.example.music.ui.theme.MusicTheme
 import com.example.music.ui.theme.screens.ProviderTestScreen
 import com.example.music.viewmodel.MusicPlayerViewModel

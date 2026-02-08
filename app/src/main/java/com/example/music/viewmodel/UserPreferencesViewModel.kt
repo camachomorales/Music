@@ -1,113 +1,298 @@
 package com.example.music.viewmodel
 
+import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
 import com.example.music.data.model.*
-import com.example.music.data.model.AccountType
-import com.example.music.data.model.AudioQuality
-import com.example.music.data.model.EqualizerPreset
-import com.example.music.data.model.UserPreferences
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import com.example.music.data.repository.AuthRepository
+import com.example.music.data.repository.AuthResult
+import com.example.music.data.repository.SettingsRepository
+import com.example.music.data.repository.SyncResult
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 
-class UserPreferencesViewModel : ViewModel() {
-    private val _userPreferences = MutableStateFlow(
-        UserPreferences(
-            userName = "Guest",
-            isDarkTheme = true,
-            audioQuality = AudioQuality.HIGH,
-            streamingQuality = AudioQuality.NORMAL,
-            downloadQuality = AudioQuality.HIGH,
-            gaplessPlayback = true,
-            normalizeVolume = false,
-            showNotifications = true,
-            downloadOnlyOnWifi = true,
-            developerMode = false,
-            allowExperimentalFeatures = false,
-            maxCacheSize = 500,
-            crossfadeDuration = 0,
-            equalizerPreset = EqualizerPreset.FLAT
+class UserPreferencesViewModel(context: Context) : ViewModel() {
+
+    private val settingsRepository = SettingsRepository(context)
+    private val authRepository = AuthRepository(context)
+
+    // User preferences flow
+    val userPreferences: StateFlow<UserPreferences> = settingsRepository.userPreferencesFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = UserPreferences()
         )
-    )
-    val userPreferences: StateFlow<UserPreferences> = _userPreferences.asStateFlow()
 
-    private val _accountType = MutableStateFlow(AccountType.GUEST)
-    val accountType: StateFlow<AccountType> = _accountType.asStateFlow()
+    // Account type derived from preferences
+    val accountType: StateFlow<AccountType> = userPreferences
+        .map { it.getAccountType() }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = AccountType.GUEST
+        )
+
+    // Auth state
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            authRepository.initialize()
+        }
+    }
+
+    // ==================== AUTH FUNCTIONS ====================
+
+    fun login(email: String, password: String, onResult: (Boolean, String) -> Unit) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            when (val result = authRepository.login(email, password)) {
+                is AuthResult.Success -> {
+                    settingsRepository.savePreferences(result.user)
+                    onResult(true, "Login successful")
+                }
+                is AuthResult.Error -> {
+                    onResult(false, result.message)
+                }
+            }
+            _isLoading.value = false
+        }
+    }
+
+    fun register(email: String, password: String, name: String, onResult: (Boolean, String) -> Unit) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            when (val result = authRepository.register(email, password, name)) {
+                is AuthResult.Success -> {
+                    settingsRepository.savePreferences(result.user)
+                    onResult(true, "Registration successful")
+                }
+                is AuthResult.Error -> {
+                    onResult(false, result.message)
+                }
+            }
+            _isLoading.value = false
+        }
+    }
+
+    fun logout() {
+        viewModelScope.launch {
+            authRepository.logout()
+        }
+    }
+
+    fun syncData() {
+        viewModelScope.launch {
+            when (authRepository.syncData()) {
+                is SyncResult.Success -> Log.d("UserPreferencesVM", "Sync successful")
+                is SyncResult.NotLoggedIn -> Log.w("UserPreferencesVM", "Not logged in")
+                is SyncResult.Error -> Log.e("UserPreferencesVM", "Sync failed")
+            }
+        }
+    }
+
+    // ==================== APPEARANCE ====================
 
     fun toggleDarkTheme() {
-        _userPreferences.value = _userPreferences.value.copy(
-            isDarkTheme = !_userPreferences.value.isDarkTheme
-        )
-    }
-
-    fun toggleDownloadOnlyOnWifi() {
-        _userPreferences.value = _userPreferences.value.copy(
-            downloadOnlyOnWifi = !_userPreferences.value.downloadOnlyOnWifi
-        )
-    }
-
-    fun toggleNotifications() {
-        _userPreferences.value = _userPreferences.value.copy(
-            showNotifications = !_userPreferences.value.showNotifications
-        )
-    }
-
-    fun setAccountType(type: AccountType) {
-        _accountType.value = type
-
-        // Si es admin, actualiza el nombre
-        if (type == AccountType.ADMIN) {
-            _userPreferences.value = _userPreferences.value.copy(
-                userName = "Developer",
-                developerMode = true,
-                allowExperimentalFeatures = true
+        viewModelScope.launch {
+            val current = userPreferences.value
+            settingsRepository.savePreferences(
+                current.copy(isDarkTheme = !current.isDarkTheme)
             )
         }
     }
 
+    fun setAccentColor(color: AccentColor) {
+        viewModelScope.launch {
+            val current = userPreferences.value
+            settingsRepository.savePreferences(
+                current.copy(accentColor = color)
+            )
+        }
+    }
+
+    fun setFontSize(size: FontSize) {
+        viewModelScope.launch {
+            val current = userPreferences.value
+            settingsRepository.savePreferences(
+                current.copy(fontSize = size)
+            )
+        }
+    }
+
+    fun toggleAnimations() {
+        viewModelScope.launch {
+            val current = userPreferences.value
+            settingsRepository.savePreferences(
+                current.copy(enableAnimations = !current.enableAnimations)
+            )
+        }
+    }
+
+    // ==================== PLAYBACK ====================
+
     fun setAudioQuality(quality: AudioQuality) {
-        _userPreferences.value = _userPreferences.value.copy(
-            audioQuality = quality
-        )
+        viewModelScope.launch {
+            val current = userPreferences.value
+            settingsRepository.savePreferences(
+                current.copy(audioQuality = quality)
+            )
+        }
     }
 
     fun setStreamingQuality(quality: AudioQuality) {
-        _userPreferences.value = _userPreferences.value.copy(
-            streamingQuality = quality
-        )
+        viewModelScope.launch {
+            val current = userPreferences.value
+            settingsRepository.savePreferences(
+                current.copy(streamingQuality = quality)
+            )
+        }
     }
 
     fun setDownloadQuality(quality: AudioQuality) {
-        _userPreferences.value = _userPreferences.value.copy(
-            downloadQuality = quality
-        )
+        viewModelScope.launch {
+            val current = userPreferences.value
+            settingsRepository.savePreferences(
+                current.copy(downloadQuality = quality)
+            )
+        }
+    }
+
+    fun setCrossfadeDuration(duration: Int) {
+        viewModelScope.launch {
+            val current = userPreferences.value
+            settingsRepository.savePreferences(
+                current.copy(crossfadeDuration = duration)
+            )
+        }
     }
 
     fun toggleGaplessPlayback() {
-        _userPreferences.value = _userPreferences.value.copy(
-            gaplessPlayback = !_userPreferences.value.gaplessPlayback
-        )
+        viewModelScope.launch {
+            val current = userPreferences.value
+            settingsRepository.savePreferences(
+                current.copy(gaplessPlayback = !current.gaplessPlayback)
+            )
+        }
     }
 
     fun toggleNormalizeVolume() {
-        _userPreferences.value = _userPreferences.value.copy(
-            normalizeVolume = !_userPreferences.value.normalizeVolume
-        )
-    }
-
-    fun setCrossfadeDuration(seconds: Int) {
-        _userPreferences.value = _userPreferences.value.copy(
-            crossfadeDuration = seconds.coerceIn(0, 12)
-        )
+        viewModelScope.launch {
+            val current = userPreferences.value
+            settingsRepository.savePreferences(
+                current.copy(normalizeVolume = !current.normalizeVolume)
+            )
+        }
     }
 
     fun setEqualizerPreset(preset: EqualizerPreset) {
-        _userPreferences.value = _userPreferences.value.copy(
-            equalizerPreset = preset
-        )
+        viewModelScope.launch {
+            val current = userPreferences.value
+            settingsRepository.savePreferences(
+                current.copy(equalizerPreset = preset)
+            )
+        }
     }
 
-    fun loginAsAdmin() {
-        setAccountType(AccountType.ADMIN)
+    // ==================== DOWNLOADS ====================
+
+    fun toggleDownloadOnlyOnWifi() {
+        viewModelScope.launch {
+            val current = userPreferences.value
+            settingsRepository.savePreferences(
+                current.copy(downloadOnlyOnWifi = !current.downloadOnlyOnWifi)
+            )
+        }
+    }
+
+    fun toggleAutoDownloadFavorites() {
+        viewModelScope.launch {
+            val current = userPreferences.value
+            settingsRepository.savePreferences(
+                current.copy(autoDownloadFavorites = !current.autoDownloadFavorites)
+            )
+        }
+    }
+
+    fun setMaxCacheSize(sizeMB: Long) {
+        viewModelScope.launch {
+            val current = userPreferences.value
+            settingsRepository.savePreferences(
+                current.copy(maxCacheSize = sizeMB)
+            )
+        }
+    }
+
+    fun toggleAutoDeleteCache() {
+        viewModelScope.launch {
+            val current = userPreferences.value
+            settingsRepository.savePreferences(
+                current.copy(autoDeleteCache = !current.autoDeleteCache)
+            )
+        }
+    }
+
+    // ==================== NOTIFICATIONS ====================
+
+    fun toggleNotifications() {
+        viewModelScope.launch {
+            val current = userPreferences.value
+            settingsRepository.savePreferences(
+                current.copy(showNotifications = !current.showNotifications)
+            )
+        }
+    }
+
+    fun toggleLockScreenControls() {
+        viewModelScope.launch {
+            val current = userPreferences.value
+            settingsRepository.savePreferences(
+                current.copy(showPlaybackControls = !current.showPlaybackControls)
+            )
+        }
+    }
+
+    fun toggleShowAlbumArt() {
+        viewModelScope.launch {
+            val current = userPreferences.value
+            settingsRepository.savePreferences(
+                current.copy(showAlbumArt = !current.showAlbumArt)
+            )
+        }
+    }
+
+    // ==================== AUTH STATE MANAGEMENT ====================
+
+    fun updateLoginState(isLoggedIn: Boolean, isAdmin: Boolean = false, email: String? = null, userName: String = "User") {
+        viewModelScope.launch {
+            val current = userPreferences.value
+            settingsRepository.savePreferences(
+                current.copy(
+                    isLoggedIn = isLoggedIn,
+                    isAdmin = isAdmin,
+                    userEmail = email,
+                    userName = userName
+                )
+            )
+        }
+    }
+
+    fun logoutUser() {
+        viewModelScope.launch {
+            val current = userPreferences.value
+            settingsRepository.savePreferences(
+                current.copy(
+                    isLoggedIn = false,
+                    isAdmin = false,
+                    userEmail = null,
+                    userName = "Guest"
+                )
+            )
+        }
     }
 }
+
