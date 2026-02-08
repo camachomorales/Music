@@ -1,7 +1,9 @@
 [versions]
-agp = "8.13.0"
-kotlin = "2.2.21"
-coreKtx = "1.13.1"
+agp = "8.7.3"
+kotlin = "2.0.0"
+ksp = "2.0.0-1.0.21"
+hilt = "2.50"
+coreKtx = "1.15.0"
 junitVersion = "1.3.0"
 junit = "4.13.2"
 espressoCore = "3.7.0"
@@ -11,13 +13,15 @@ composeBom = "2024.10.01"
 constraintlayout = "2.2.1"
 coilCompose = "2.7.0"
 converterGson = "2.11.0"
-firebaseBom = "34.4.0"
+firebaseBom = "33.5.1"
 gson = "2.11.0"
 jaudiotagger = "3.0.1"
 loggingInterceptor = "4.12.0"
 material = "1.13.0"
 media = "1.7.0"
 media3Session = "1.8.0"
+media3Exoplayer = "1.8.0"
+media3Ui = "1.8.0"
 okhttp = "4.12.0"
 paginate = "1.0.0"
 paletteKtx = "1.0.0"
@@ -26,13 +30,10 @@ recyclerview = "1.3.2"
 retrofit = "2.11.0"
 runtime = "1.7.6"
 foundationLayout = "1.7.6"
-media3Exoplayer = "1.8.0"
-media3Ui = "1.4.0"
 navigationCompose = "2.8.5"
 navigationRuntimeKtx = "2.8.5"
 sdpAndroid = "1.1.0"
 shimmer = "0.5.0"
-slidingrootnav = "1.1.1"
 sspAndroid = "1.1.0"
 swiperefreshlayout = "1.1.0"
 ui = "1.7.6"
@@ -44,8 +45,14 @@ material3 = "1.4.0"
 foundation = "1.9.4"
 runtimeVersion = "1.9.4"
 cameraCore = "1.5.1"
-mediaVersion = "1.6.0"
+mediaVersion = "1.7.0"
 animationCore = "1.9.4"
+room = "2.6.1"
+datastore = "1.1.1"
+ktorClient = "2.3.12"
+kotlinxSerialization = "1.7.1"
+materialIconsExtended = "1.7.6"
+hiltNavigationCompose = "1.1.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -53,6 +60,8 @@ junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
+androidx-lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "lifecycleRuntimeKtx" }
+androidx-lifecycle-viewmodel-ktx = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version.ref = "lifecycleRuntimeKtx" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
 androidx-compose-ui = { group = "androidx.compose.ui", name = "ui", version.ref = "ui" }
@@ -62,20 +71,59 @@ androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "u
 androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest", version.ref = "ui" }
 androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4", version.ref = "ui" }
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
+androidx-compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended", version.ref = "materialIconsExtended" }
 androidx-compose-runtime = { group = "androidx.compose.runtime", name = "runtime", version.ref = "ui" }
 androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation-layout", version.ref = "foundationLayout" }
+androidx-compose-foundation-base = { group = "androidx.compose.foundation", name = "foundation", version.ref = "foundation" }
+androidx-compose-animation-core = { group = "androidx.compose.animation", name = "animation-core", version.ref = "animationCore" }
+androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 androidx-navigation-runtime-ktx = { group = "androidx.navigation", name = "navigation-runtime-ktx", version.ref = "navigationRuntimeKtx" }
 androidx-media3-exoplayer = { group = "androidx.media3", name = "media3-exoplayer", version.ref = "media3Exoplayer" }
+androidx-media3-ui = { group = "androidx.media3", name = "media3-ui", version.ref = "media3Ui" }
+androidx-media3-session = { group = "androidx.media3", name = "media3-session", version.ref = "media3Session" }
+androidx-media3-datasource-okhttp = { group = "androidx.media3", name = "media3-datasource-okhttp", version.ref = "media3Exoplayer" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
-com-github-yarolegovich-slidingrootnav = { group = "com.github.yarolegovich", name = "SlidingRootNav", version.ref = "slidingrootnav" }
-androidx-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "foundation" }
-androidx-runtime = { group = "androidx.compose.runtime", name = "runtime", version.ref = "runtimeVersion" }
-androidx-camera-core = { group = "androidx.camera", name = "camera-core", version.ref = "cameraCore" }
 androidx-media = { group = "androidx.media", name = "media", version.ref = "mediaVersion" }
-androidx-compose-animation-core = { group = "androidx.compose.animation", name = "animation-core", version.ref = "animationCore" }
+androidx-camera-core = { group = "androidx.camera", name = "camera-core", version.ref = "cameraCore" }
+androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
+androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
+androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
+androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
+androidx-recyclerview = { group = "androidx.recyclerview", name = "recyclerview", version.ref = "recyclerview" }
+androidx-swiperefreshlayout = { group = "androidx.swiperefreshlayout", name = "swiperefreshlayout", version.ref = "swiperefreshlayout" }
+androidx-palette-ktx = { group = "androidx.palette", name = "palette-ktx", version.ref = "paletteKtx" }
+
+material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+
+coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coilCompose" }
+
+retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
+converter-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "converterGson" }
+okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
+logging-interceptor = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "loggingInterceptor" }
+
+ktor-client-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktorClient" }
+ktor-client-okhttp = { group = "io.ktor", name = "ktor-client-okhttp", version.ref = "ktorClient" }
+ktor-client-content-negotiation = { group = "io.ktor", name = "ktor-client-content-negotiation", version.ref = "ktorClient" }
+ktor-serialization-kotlinx-json = { group = "io.ktor", name = "ktor-serialization-kotlinx-json", version.ref = "ktorClient" }
+ktor-client-encoding = { group = "io.ktor", name = "ktor-client-encoding", version.ref = "ktorClient" }
+
+kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
+gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
+
+jaudiotagger = { group = "net.jthink", name = "jaudiotagger", version.ref = "jaudiotagger" }
+picasso = { group = "com.squareup.picasso", name = "picasso", version.ref = "picasso" }
+shimmer = { group = "com.facebook.shimmer", name = "shimmer", version.ref = "shimmer" }
+
+sdp-android = { group = "com.intuit.sdp", name = "sdp-android", version.ref = "sdpAndroid" }
+ssp-android = { group = "com.intuit.ssp", name = "ssp-android", version.ref = "sspAndroid" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 google-gms-google-services = { id = "com.google.gms.google-services", version.ref = "googleGmsGoogleServices" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+

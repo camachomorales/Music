@@ -2,19 +2,23 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.ksp)
     id("kotlin-parcelize")
     id("com.google.gms.google-services")
-    id("org.jetbrains.kotlin.plugin.serialization") version "1.9.22"
+    id("dagger.hilt.android.plugin") // Hilt
+
+
 }
 
 android {
     namespace = "com.example.music"
-    compileSdk = 36
+    compileSdk = 35 // Actualizado a 35
 
     defaultConfig {
         applicationId = "com.example.music"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
 
@@ -49,10 +53,6 @@ android {
         viewBinding = true
     }
 
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.14"
-    }
-
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -63,71 +63,109 @@ android {
 
 dependencies {
     // Core Android
-    implementation("androidx.core:core-ktx:1.12.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.3")
-    implementation("androidx.activity:activity-compose:1.9.0")
-    implementation("androidx.appcompat:appcompat:1.7.0")
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.appcompat)
 
-    // Compose BOM (maneja todas las versiones)
-    implementation(platform("androidx.compose:compose-bom:2024.09.03"))
-    implementation("androidx.compose.ui:ui")
-    implementation("androidx.compose.ui:ui-graphics")
-    implementation("androidx.compose.ui:ui-tooling-preview")
-    implementation("androidx.compose.material3:material3")
-    implementation("androidx.compose.material:material-icons-extended")
+    // Compose BOM
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.compose.ui.graphics)
+    implementation(libs.androidx.compose.ui.tooling.preview)
+    implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.compose.material.icons.extended)
+    implementation(libs.androidx.compose.runtime)
+    implementation(libs.androidx.compose.foundation)
+    implementation(libs.androidx.compose.foundation.base)
+    implementation(libs.androidx.compose.animation.core)
 
     // Navigation Compose
-    implementation("androidx.navigation:navigation-compose:2.8.0")
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.navigation.runtime.ktx)
 
     // ViewModel + LiveData
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.3")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.3")
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
 
-    // ✅ DATASTORE (SIN KSP - FUNCIONA PERFECTO)
-    implementation("androidx.datastore:datastore-preferences:1.1.1")
+    // DataStore
+    implementation(libs.androidx.datastore.preferences)
 
-    // ✅ KOTLIN SERIALIZATION (para UserPreferences)
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.1")
+    // Room Database
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
 
-    // Media3 (reproductor estilo Spotify)
-    implementation("androidx.media3:media3-exoplayer:1.4.1")
-    implementation("androidx.media3:media3-ui:1.4.1")
-    implementation("androidx.media3:media3-session:1.4.1")
-    implementation("androidx.media3:media3-datasource-okhttp:1.4.1")
+    // Kotlin Serialization
+    implementation(libs.kotlinx.serialization.json)
+
+    // Media3 (ExoPlayer)
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.ui)
+    implementation(libs.androidx.media3.session)
+    implementation(libs.androidx.media3.datasource.okhttp)
 
     // Streaming (Ktor + InnerTube)
-    implementation("io.ktor:ktor-client-core:2.3.12")
-    implementation("io.ktor:ktor-client-okhttp:2.3.12")
-    implementation("io.ktor:ktor-client-content-negotiation:2.3.12")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.12")
-    implementation("io.ktor:ktor-client-encoding:2.3.12")
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.okhttp)
+    implementation(libs.ktor.client.content.negotiation)
+    implementation(libs.ktor.serialization.kotlinx.json)
+    implementation(libs.ktor.client.encoding)
 
-    // Firebase (login + sync)
+    // Firebase
     implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.firebase:firebase-analytics-ktx")
+    implementation("com.google.firebase:firebase-firestore-ktx") // AGREGAR
 
-    // Imágenes - CORREGIDO: solo usar coil-compose
-    implementation("io.coil-kt:coil-compose:2.7.0")
-    // REMOVER ESTA LÍNEA: implementation("io.coil-kt:coil-network-okhttp:2.7.0")
+    // Hilt - Dependency Injection
+    implementation("com.google.dagger:hilt-android:2.50")
+    ksp("com.google.dagger:hilt-android-compiler:2.50")
+    implementation("androidx.hilt:hilt-navigation-compose:1.1.0")
+
+    // Imágenes
+    implementation(libs.coil.compose)
+    implementation(libs.picasso)
 
     // Red (Retrofit + OkHttp)
-    implementation("com.squareup.retrofit2:retrofit:2.11.0")
-    implementation("com.squareup.retrofit2:converter-gson:2.11.0")
-    implementation("com.squareup.okhttp3:okhttp:4.12.0")
-    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+    implementation(libs.retrofit)
+    implementation(libs.converter.gson)
+    implementation(libs.okhttp)
+    implementation(libs.logging.interceptor)
+
+    // JSON
+    implementation(libs.gson)
 
     // Audio tags + Media
-    implementation("net.jthink:jaudiotagger:3.0.1")
-    implementation("androidx.media:media:1.7.0")
+    implementation(libs.jaudiotagger)
+    implementation(libs.androidx.media)
+    implementation(libs.androidx.camera.core)
+
+    // UI Components
+    implementation(libs.material)
+    implementation(libs.androidx.constraintlayout)
+    implementation(libs.androidx.recyclerview)
+    implementation(libs.androidx.swiperefreshlayout)
+    implementation(libs.androidx.palette.ktx)
+    implementation(libs.shimmer)
+
+    // Dimensiones escalables
+    implementation(libs.sdp.android)
+    implementation(libs.ssp.android)
 
     // Testing
-    testImplementation("junit:junit:4.13.2")
-    androidTestImplementation("androidx.test.ext:junit:1.2.1")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
-    androidTestImplementation(platform("androidx.compose:compose-bom:2024.09.03"))
-    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
 
-    debugImplementation("androidx.compose.ui:ui-tooling")
-    debugImplementation("androidx.compose.ui:ui-test-manifest")
+    debugImplementation(libs.androidx.compose.ui.tooling)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 }
+
+
+
+
+
+

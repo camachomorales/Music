@@ -17,7 +17,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.music.data.repository.MusicRepository
 import com.example.music.ui.MainNavigation
 import com.example.music.ui.theme.MusicTheme
-import com.example.music.ui.theme.screens.ProviderTestScreen
 import com.example.music.viewmodel.MusicPlayerViewModel
 import com.example.music.viewmodel.MusicPlayerViewModelFactory
 
@@ -25,7 +24,6 @@ class MainActivity : ComponentActivity() {
 
     private val musicRepository by lazy { MusicRepository(this) }
 
-    // ✅ Usar Factory para crear el ViewModel
     private val viewModel: MusicPlayerViewModel by viewModels {
         MusicPlayerViewModelFactory(application, musicRepository)
     }
@@ -68,15 +66,11 @@ class MainActivity : ComponentActivity() {
             MusicTheme {
                 val songs by viewModel.songs.collectAsStateWithLifecycle()
                 MainNavigation(viewModel = viewModel, songs = songs)
-
-                // ✅ AGREGAR ESTO PARA PROBAR
-               // ProviderTestScreen(viewModel = viewModel)
             }
         }
     }
 
     private fun checkAndRequestPermissions() {
-        // Permiso para leer audio
         val audioPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             Manifest.permission.READ_MEDIA_AUDIO
         } else {
@@ -95,7 +89,6 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        // Permiso para notificaciones (Android 13+)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(
                     this,
