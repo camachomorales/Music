@@ -29,7 +29,7 @@ import com.example.music.ui.theme.components.BottomNavigationBar
 import com.example.music.ui.theme.components.MiniPlayer
 import com.example.music.ui.theme.screens.*
 import com.example.music.viewmodel.MusicPlayerViewModel
-import com.example.music.viewmodel.LibraryViewModel
+import com.example.music.viewmodel.LibraryViewModel_OLD
 import android.widget.Toast
 import androidx.compose.material3.*
 import com.example.music.data.model.*
@@ -42,15 +42,13 @@ import com.example.music.ui.screens.LibraryScreen
 import com.example.music.ui.screens.SettingsScreen
 import com.example.music.ui.screens.SettingsScreen.AccountScreen
 import com.example.music.ui.screens.SettingsScreen.PlaybackSettingsScreen
-import kotlinx.coroutines.launch
-import androidx.compose.runtime.LaunchedEffect
 
 @Composable
 fun MainNavigation(viewModel: MusicPlayerViewModel, songs: List<Song>) {
     val navController = rememberNavController()
 
     // ✅ LibraryViewModel
-    val libraryViewModel: LibraryViewModel = viewModel()
+    val libraryViewModel: LibraryViewModel_OLD = viewModel()
 
     // Estados del MusicPlayerViewModel
     val streamingSongs by viewModel.streamingSongs.collectAsStateWithLifecycle()
@@ -675,12 +673,11 @@ fun MainNavigation(viewModel: MusicPlayerViewModel, songs: List<Song>) {
                     )
                 }
 
-// ==================== ACCOUNT SCREEN ====================
+                // ==================== ACCOUNT SCREEN ====================
                 composable("account") {
                     val context = LocalContext.current
                     val scope = rememberCoroutineScope()
 
-                    // ✅ USAR FACTORY
                     val userPreferencesViewModel: UserPreferencesViewModel = viewModel(
                         factory = object : ViewModelProvider.Factory {
                             override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -689,19 +686,12 @@ fun MainNavigation(viewModel: MusicPlayerViewModel, songs: List<Song>) {
                             }
                         }
                     )
+
                     val userPreferences by userPreferencesViewModel.userPreferences.collectAsStateWithLifecycle()
                     val accountType by userPreferencesViewModel.accountType.collectAsStateWithLifecycle()
 
                     var isLoading by remember { mutableStateOf(false) }
                     var isSyncing by remember { mutableStateOf(false) }
-
-                    // ✅ OBSERVAR CAMBIOS EN ACCOUNT TYPE PARA NAVEGAR AUTOMÁTICAMENTE
-                    LaunchedEffect(accountType) {
-                        if (accountType != AccountType.GUEST && !isLoading) {
-                            delay(500)
-                            navController.navigateUp()
-                        }
-                    }
 
                     AccountScreen(
                         userPreferences = userPreferences,
@@ -718,16 +708,19 @@ fun MainNavigation(viewModel: MusicPlayerViewModel, songs: List<Song>) {
                                         return@launch
                                     }
 
-                                    delay(2000)
-                                    // ✅ CORREGIDO
+                                    // Simulate login
+                                    delay(1000)
+
                                     userPreferencesViewModel.updateLoginState(
                                         isLoggedIn = true,
                                         isAdmin = false,
                                         email = email,
                                         userName = "User"
                                     )
+
                                     Toast.makeText(context, "Logged in successfully", Toast.LENGTH_SHORT).show()
                                     isLoading = false
+                                    navController.navigateUp()
                                 } catch (e: Exception) {
                                     isLoading = false
                                     Toast.makeText(context, "Login failed: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -744,16 +737,19 @@ fun MainNavigation(viewModel: MusicPlayerViewModel, songs: List<Song>) {
                                         return@launch
                                     }
 
-                                    delay(2000)
-                                    // ✅ CORREGIDO
+                                    // Simulate registration
+                                    delay(1000)
+
                                     userPreferencesViewModel.updateLoginState(
                                         isLoggedIn = true,
                                         isAdmin = false,
                                         email = email,
                                         userName = name
                                     )
+
                                     Toast.makeText(context, "Account created successfully", Toast.LENGTH_SHORT).show()
                                     isLoading = false
+                                    navController.navigateUp()
                                 } catch (e: Exception) {
                                     isLoading = false
                                     Toast.makeText(context, "Registration failed: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -761,17 +757,18 @@ fun MainNavigation(viewModel: MusicPlayerViewModel, songs: List<Song>) {
                             }
                         },
                         onLogout = {
-                            // ✅ CORREGIDO
-                            userPreferencesViewModel.logoutUser()
-                            Toast.makeText(context, "Logged out", Toast.LENGTH_SHORT).show()
+                            scope.launch {
+                                userPreferencesViewModel.logoutUser()
+                                Toast.makeText(context, "Logged out", Toast.LENGTH_SHORT).show()
+                            }
                         },
                         onSync = {
                             isSyncing = true
                             scope.launch {
                                 try {
-                                    delay(3000)
+                                    delay(2000)
                                     isSyncing = false
-                                    Toast.makeText(context, "Data synchronized", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, "Data synchronized ✅", Toast.LENGTH_SHORT).show()
                                 } catch (e: Exception) {
                                     isSyncing = false
                                     Toast.makeText(context, "Sync failed: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -782,12 +779,10 @@ fun MainNavigation(viewModel: MusicPlayerViewModel, songs: List<Song>) {
                     )
                 }
 
-
-// ==================== PLAYBACK SETTINGS SCREEN ====================
+                // ==================== PLAYBACK SETTINGS SCREEN ====================
                 composable("playback_settings") {
                     val context = LocalContext.current
 
-                    // ✅ USAR FACTORY
                     val userPreferencesViewModel: UserPreferencesViewModel = viewModel(
                         factory = object : ViewModelProvider.Factory {
                             override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -832,12 +827,100 @@ fun MainNavigation(viewModel: MusicPlayerViewModel, songs: List<Song>) {
                     )
                 }
 
-                // ==================== ACCOUNT SCREEN ====================
-                composable("account") {
-                    val context = LocalContext.current
-                    val scope = rememberCoroutineScope()
+                // ==================== PLAYER SCREEN ====================
+                composable("player") {
+                    val repeatMode by viewModel.repeatMode.collectAsStateWithLifecycle()
+                    val shuffleEnabled by viewModel.shuffleEnabled.collectAsStateWithLifecycle()
+                    val currentPosition by viewModel.currentPosition.collectAsStateWithLifecycle()
+                    val duration by viewModel.duration.collectAsStateWithLifecycle()
+                    val isLoadingStream by viewModel.isLoadingStream.collectAsStateWithLifecycle()
 
-                    // ✅ USAR FACTORY
+                    // ✅ DETECTAR SI ES FAVORITO (LOCAL O STREAMING)
+                    val isLiked = remember(currentSong, favoriteSongIds, favoriteStreamingSongIds) {
+                        currentSong?.let { song ->
+                            if (song.isStreaming) {
+                                // Usar streamingId si está disponible
+                                val streamingId = song.streamingId ?: run {
+                                    if (song.path.startsWith("streaming://")) {
+                                        val parts = song.path.removePrefix("streaming://").split("/")
+                                        if (parts.size >= 2) parts[1] else null
+                                    } else null
+                                }
+                                streamingId?.let { favoriteStreamingSongIds.contains(it) } ?: false
+                            } else {
+                                favoriteSongIds.contains(song.id)
+                            }
+                        } ?: false
+                    }
+
+                    MusicPlayerScreen(
+                        playerState = PlayerState(
+                            currentSong = currentSong,
+                            isPlaying = isPlaying,
+                            currentPosition = currentPosition,
+                            duration = duration,
+                            isShuffleEnabled = shuffleEnabled,
+                            repeatMode = repeatMode,
+                            isLiked = isLiked,
+                            isLoadingStream = isLoadingStream
+                        ),
+                        appMode = appMode,
+                        onToggleMode = { viewModel.toggleOnlineMode() },
+                        onPlayPause = { viewModel.togglePlayPause() },
+                        onSkipNext = { viewModel.skipToNext() },
+                        onSkipPrevious = { viewModel.skipToPrevious() },
+                        onSeek = { position -> viewModel.seekTo(position) },
+                        onToggleShuffle = { viewModel.toggleShuffle() },
+                        onToggleRepeat = { viewModel.cycleRepeatMode() },
+                        onToggleLike = {
+                            currentSong?.let { song ->
+                                if (song.isStreaming) {
+                                    // ✅ Es streaming song - usar streamingId si está disponible
+                                    val streamingId = song.streamingId ?: run {
+                                        if (song.path.startsWith("streaming://")) {
+                                            val parts = song.path.removePrefix("streaming://").split("/")
+                                            if (parts.size >= 2) parts[1] else null
+                                        } else null
+                                    }
+
+                                    streamingId?.let { id ->
+                                        // ✅ Obtener provider
+                                        val provider = song.streamingProvider?.let { providerName ->
+                                            when (providerName.uppercase()) {
+                                                "INNERTUBE" -> com.example.music.data.api.MusicProviderType.INNERTUBE
+                                                "JIOSAAVN" -> com.example.music.data.api.MusicProviderType.JIOSAAVN
+                                                "YOUTUBE_MUSIC" -> com.example.music.data.api.MusicProviderType.INNERTUBE
+                                                else -> com.example.music.data.api.MusicProviderType.INNERTUBE
+                                            }
+                                        } ?: com.example.music.data.api.MusicProviderType.INNERTUBE
+
+                                        // ✅ Crear StreamingSong para toggle
+                                        val streamingSong = com.example.music.data.model.StreamingSong(
+                                            id = id,
+                                            title = song.title,
+                                            artist = song.artist,
+                                            album = song.album,
+                                            duration = song.duration,
+                                            thumbnailUrl = song.albumArtUri,
+                                            provider = provider
+                                        )
+                                        libraryViewModel.toggleStreamingFavorite(streamingSong)
+                                    }
+                                } else {
+                                    // ✅ Es local song
+                                    libraryViewModel.toggleFavorite(song)
+                                }
+                            }
+                        },
+                        onBackClick = { navController.navigateUp() }
+                    )
+                }
+
+
+                // ==================== PLAYBACK SETTINGS SCREEN ====================
+                composable("playback_settings") {
+                    val context = LocalContext.current
+
                     val userPreferencesViewModel: UserPreferencesViewModel = viewModel(
                         factory = object : ViewModelProvider.Factory {
                             override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -847,20 +930,65 @@ fun MainNavigation(viewModel: MusicPlayerViewModel, songs: List<Song>) {
                         }
                     )
                     val userPreferences by userPreferencesViewModel.userPreferences.collectAsStateWithLifecycle()
+
+                    PlaybackSettingsScreen(
+                        userPreferences = userPreferences,
+                        onAudioQualityChange = { newQuality ->
+                            userPreferencesViewModel.setAudioQuality(newQuality)
+                            Toast.makeText(context, "Audio quality set to ${newQuality.displayName}", Toast.LENGTH_SHORT).show()
+                        },
+                        onStreamingQualityChange = { newQuality ->
+                            userPreferencesViewModel.setStreamingQuality(newQuality)
+                            Toast.makeText(context, "Streaming quality set to ${newQuality.displayName}", Toast.LENGTH_SHORT).show()
+                        },
+                        onDownloadQualityChange = { newQuality ->
+                            userPreferencesViewModel.setDownloadQuality(newQuality)
+                            Toast.makeText(context, "Download quality set to ${newQuality.displayName}", Toast.LENGTH_SHORT).show()
+                        },
+                        onCrossfadeChange = { seconds ->
+                            userPreferencesViewModel.setCrossfadeDuration(seconds)
+                            Toast.makeText(context, "Crossfade set to ${seconds}s", Toast.LENGTH_SHORT).show()
+                        },
+                        onToggleGapless = {
+                            userPreferencesViewModel.toggleGaplessPlayback()
+                            Toast.makeText(context, "Gapless playback toggled", Toast.LENGTH_SHORT).show()
+                        },
+                        onToggleNormalize = {
+                            userPreferencesViewModel.toggleNormalizeVolume()
+                            Toast.makeText(context, "Volume normalization toggled", Toast.LENGTH_SHORT).show()
+                        },
+                        onEqualizerChange = { preset ->
+                            userPreferencesViewModel.setEqualizerPreset(preset)
+                            Toast.makeText(context, "Equalizer preset set to ${preset.displayName}", Toast.LENGTH_SHORT).show()
+                        },
+                        onBackClick = { navController.navigateUp() }
+                    )
+                }
+
+
+               // ==================== PLAYBACK SETTINGS SCREEN ====================
+                // ==================== ACCOUNT SCREEN ====================
+                composable("account") {
+                    val context = LocalContext.current
+                    val scope = rememberCoroutineScope()
+
+                    val userPreferencesViewModel: UserPreferencesViewModel = viewModel(
+                        factory = object : ViewModelProvider.Factory {
+                            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                                @Suppress("UNCHECKED_CAST")
+                                return UserPreferencesViewModel(context) as T
+                            }
+                        }
+                    )
+
+                    val userPreferences by userPreferencesViewModel.userPreferences.collectAsStateWithLifecycle()
                     val accountType by userPreferencesViewModel.accountType.collectAsStateWithLifecycle()
+
+                    // ✅ Get current user from LibraryViewModel
+                    val currentUser by libraryViewModel.currentUser.collectAsStateWithLifecycle()
 
                     var isLoading by remember { mutableStateOf(false) }
                     var isSyncing by remember { mutableStateOf(false) }
-
-                    // ❌ ELIMINAR ESTE BLOQUE COMPLETO - Es lo que causa el problema
-                    /*
-                    LaunchedEffect(accountType) {
-                        if (accountType != AccountType.GUEST && !isLoading) {
-                            delay(500)
-                            navController.navigateUp()
-                        }
-                    }
-                    */
 
                     AccountScreen(
                         userPreferences = userPreferences,
@@ -877,17 +1005,26 @@ fun MainNavigation(viewModel: MusicPlayerViewModel, songs: List<Song>) {
                                         return@launch
                                     }
 
-                                    delay(2000)
-                                    userPreferencesViewModel.updateLoginState(
-                                        isLoggedIn = true,
-                                        isAdmin = false,
-                                        email = email,
-                                        userName = "User"
-                                    )
-                                    Toast.makeText(context, "Logged in successfully", Toast.LENGTH_SHORT).show()
-                                    isLoading = false
-                                    // ✅ NAVEGAR AQUÍ DESPUÉS DE LOGIN EXITOSO
-                                    navController.navigateUp()
+                                    // ✅ LOGIN using LibraryViewModel
+                                    val result = libraryViewModel.loginUser(email, password)
+
+                                    if (result.isSuccess) {
+                                        val user = result.getOrNull()
+
+                                        userPreferencesViewModel.updateLoginState(
+                                            isLoggedIn = true,
+                                            isAdmin = user?.isAdmin ?: false,
+                                            email = email,
+                                            userName = user?.userName ?: "User"
+                                        )
+
+                                        Toast.makeText(context, "Logged in successfully", Toast.LENGTH_SHORT).show()
+                                        isLoading = false
+                                        navController.navigateUp()
+                                    } else {
+                                        Toast.makeText(context, "Login failed", Toast.LENGTH_SHORT).show()
+                                        isLoading = false
+                                    }
                                 } catch (e: Exception) {
                                     isLoading = false
                                     Toast.makeText(context, "Login failed: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -904,17 +1041,24 @@ fun MainNavigation(viewModel: MusicPlayerViewModel, songs: List<Song>) {
                                         return@launch
                                     }
 
-                                    delay(2000)
-                                    userPreferencesViewModel.updateLoginState(
-                                        isLoggedIn = true,
-                                        isAdmin = false,
-                                        email = email,
-                                        userName = name
-                                    )
-                                    Toast.makeText(context, "Account created successfully", Toast.LENGTH_SHORT).show()
-                                    isLoading = false
-                                    // ✅ NAVEGAR AQUÍ DESPUÉS DE REGISTRO EXITOSO
-                                    navController.navigateUp()
+                                    // ✅ REGISTER using LibraryViewModel
+                                    val result = libraryViewModel.registerUser(email, password, name)
+
+                                    if (result.isSuccess) {
+                                        userPreferencesViewModel.updateLoginState(
+                                            isLoggedIn = true,
+                                            isAdmin = false,
+                                            email = email,
+                                            userName = name
+                                        )
+
+                                        Toast.makeText(context, "Account created successfully", Toast.LENGTH_SHORT).show()
+                                        isLoading = false
+                                        navController.navigateUp()
+                                    } else {
+                                        Toast.makeText(context, "Registration failed", Toast.LENGTH_SHORT).show()
+                                        isLoading = false
+                                    }
                                 } catch (e: Exception) {
                                     isLoading = false
                                     Toast.makeText(context, "Registration failed: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -922,16 +1066,22 @@ fun MainNavigation(viewModel: MusicPlayerViewModel, songs: List<Song>) {
                             }
                         },
                         onLogout = {
-                            userPreferencesViewModel.logoutUser()
-                            Toast.makeText(context, "Logged out", Toast.LENGTH_SHORT).show()
+                            scope.launch {
+                                // ✅ LOGOUT using LibraryViewModel
+                                libraryViewModel.logoutUser()
+                                userPreferencesViewModel.logoutUser()
+                                Toast.makeText(context, "Logged out", Toast.LENGTH_SHORT).show()
+                            }
                         },
                         onSync = {
                             isSyncing = true
                             scope.launch {
                                 try {
-                                    delay(3000)
+                                    // ✅ SYNC using LibraryViewModel
+                                    libraryViewModel.syncUserData()
+                                    delay(2000)
                                     isSyncing = false
-                                    Toast.makeText(context, "Data synchronized", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, "Data synchronized ✅", Toast.LENGTH_SHORT).show()
                                 } catch (e: Exception) {
                                     isSyncing = false
                                     Toast.makeText(context, "Sync failed: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -941,6 +1091,8 @@ fun MainNavigation(viewModel: MusicPlayerViewModel, songs: List<Song>) {
                         onBackClick = { navController.navigateUp() }
                     )
                 }
+
+
 
 
 // ==================== PLAYBACK SETTINGS SCREEN ====================

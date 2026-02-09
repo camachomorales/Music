@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class LibraryViewModel(application: Application) : AndroidViewModel(application) {
+class LibraryViewModel_OLD(application: Application) : AndroidViewModel(application) {
 
     private val libraryRepository = LibraryRepository(application.applicationContext)
     private val streamingRepository = StreamingMusicRepository()

@@ -4,7 +4,7 @@ data class Playlist(
     val id: String,
     val name: String,
     val description: String = "",
-    val coverImageUri: String? = null,
+    val coverUri: String? = null,  // ✅ NOMBRE CORRECTO
     val songs: List<Song> = emptyList(),
     val createdAt: Long = System.currentTimeMillis(),
     val isUserCreated: Boolean = true

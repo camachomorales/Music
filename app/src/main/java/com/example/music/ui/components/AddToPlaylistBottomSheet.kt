@@ -190,9 +190,9 @@ fun AddToPlaylistBottomSheet(
                                     modifier = Modifier.size(24.dp)
                                 )
 
-                                if (playlist.coverImageUri != null) {
+                                if (playlist.coverUri != null) {
                                     AsyncImage(
-                                        model = playlist.coverImageUri,
+                                        model = playlist.coverUri,
                                         contentDescription = playlist.name,
                                         modifier = Modifier.fillMaxSize(),
                                         contentScale = ContentScale.Crop
