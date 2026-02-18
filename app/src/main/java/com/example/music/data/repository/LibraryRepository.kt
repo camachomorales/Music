@@ -1,177 +1,231 @@
 package com.example.music.data.repository
 
 import android.content.Context
+import android.util.Log
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.*
+import androidx.datastore.preferences.preferencesDataStore
 import com.example.music.data.model.Playlist
 import com.example.music.data.model.Song
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import java.util.UUID
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+
+private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "library_prefs")
 
 class LibraryRepository(private val context: Context) {
 
-    // En memoria por ahora - después puedes usar Room Database
-    private val playlists = mutableListOf<Playlist>()
+    private val gson = Gson()
 
-    // ==================== FAVORITES (MIXTO) ====================
-    private val favoriteSongs = mutableSetOf<Long>() // IDs de canciones locales
-    private val favoriteStreamingSongs = mutableSetOf<String>() // IDs de streaming songs
-
-    // ==================== RECENTLY PLAYED ====================
-    private val recentlyPlayed = mutableListOf<Pair<Song, Long>>() // (Song, timestamp)
-    private val MAX_RECENTLY_PLAYED = 50
+    // Keys para DataStore
+    private val PLAYLISTS_KEY = stringPreferencesKey("playlists")
+    private val FAVORITES_KEY = stringPreferencesKey("favorite_song_ids")
+    private val STREAMING_FAVORITES_KEY = stringPreferencesKey("streaming_favorite_ids")
+    private val RECENTLY_PLAYED_KEY = stringPreferencesKey("recently_played_songs")
 
     // ==================== PLAYLISTS ====================
 
-    suspend fun getAllPlaylists(): List<Playlist> = withContext(Dispatchers.IO) {
-        playlists.toList()
+    suspend fun getAllPlaylists(): List<Playlist> {
+        val prefs = context.dataStore.data.first()
+        val json = prefs[PLAYLISTS_KEY] ?: return emptyList()
+        return try {
+            val type = object : TypeToken<List<Playlist>>() {}.type
+            gson.fromJson(json, type) ?: emptyList()
+        } catch (e: Exception) {
+            emptyList()
+        }
     }
 
-    suspend fun getPlaylistById(playlistId: String): Playlist? = withContext(Dispatchers.IO) {
-        playlists.find { it.id == playlistId }
+    private suspend fun savePlaylists(playlists: List<Playlist>) {
+        context.dataStore.edit { prefs ->
+            prefs[PLAYLISTS_KEY] = gson.toJson(playlists)
+        }
     }
 
-    suspend fun createPlaylist(name: String, description: String): Playlist = withContext(Dispatchers.IO) {
+    suspend fun createPlaylist(name: String, description: String) {
+        val playlists = getAllPlaylists().toMutableList()
         val newPlaylist = Playlist(
-            id = UUID.randomUUID().toString(),
+            id = System.currentTimeMillis().toString(),
             name = name,
             description = description,
             songs = emptyList(),
             createdAt = System.currentTimeMillis()
         )
         playlists.add(newPlaylist)
-        newPlaylist
+        savePlaylists(playlists)
     }
 
-    suspend fun deletePlaylist(playlistId: String) = withContext(Dispatchers.IO) {
-        playlists.removeIf { it.id == playlistId }
+    suspend fun deletePlaylist(playlistId: String) {
+        val playlists = getAllPlaylists().filter { it.id != playlistId }
+        savePlaylists(playlists)
     }
 
-    suspend fun renamePlaylist(playlistId: String, newName: String) = withContext(Dispatchers.IO) {
-        val index = playlists.indexOfFirst { it.id == playlistId }
-        if (index != -1) {
-            val playlist = playlists[index]
-            playlists[index] = playlist.copy(name = newName)
-        }
-    }
-
-    suspend fun addSongToPlaylist(playlistId: String, song: Song) = withContext(Dispatchers.IO) {
-        val index = playlists.indexOfFirst { it.id == playlistId }
-        if (index != -1) {
-            val playlist = playlists[index]
-            // Solo agregar si la canción no está ya en la playlist
-            if (!playlist.songs.any { it.id == song.id }) {
-                val updatedSongs = playlist.songs + song
-                playlists[index] = playlist.copy(songs = updatedSongs)
+    suspend fun renamePlaylist(playlistId: String, newName: String) {
+        val playlists = getAllPlaylists().map { playlist ->
+            if (playlist.id == playlistId) {
+                playlist.copy(name = newName)
+            } else {
+                playlist
             }
         }
+        savePlaylists(playlists)
     }
 
-    suspend fun removeSongFromPlaylist(playlistId: String, songId: Long) = withContext(Dispatchers.IO) {
-        val index = playlists.indexOfFirst { it.id == playlistId }
-        if (index != -1) {
-            val playlist = playlists[index]
-            val updatedSongs = playlist.songs.filter { it.id != songId }
-            playlists[index] = playlist.copy(songs = updatedSongs)
+    suspend fun addSongToPlaylist(playlistId: String, song: Song) {
+        val playlists = getAllPlaylists().map { playlist ->
+            if (playlist.id == playlistId) {
+                val updatedSongs = playlist.songs.toMutableList()
+                // Evitar duplicados
+                if (!updatedSongs.any { it.id == song.id }) {
+                    updatedSongs.add(song)
+                }
+                playlist.copy(songs = updatedSongs)
+            } else {
+                playlist
+            }
+        }
+        savePlaylists(playlists)
+    }
+
+    suspend fun removeSongFromPlaylist(playlistId: String, songId: Long) {
+        val playlists = getAllPlaylists().map { playlist ->
+            if (playlist.id == playlistId) {
+                playlist.copy(songs = playlist.songs.filter { it.id != songId })
+            } else {
+                playlist
+            }
+        }
+        savePlaylists(playlists)
+    }
+
+    suspend fun reorderPlaylistSongs(playlistId: String, newOrder: List<Song>) {
+        val playlists = getAllPlaylists().map { playlist ->
+            if (playlist.id == playlistId) {
+                playlist.copy(songs = newOrder)
+            } else {
+                playlist
+            }
+        }
+        savePlaylists(playlists)
+    }
+
+    // ==================== FAVORITES (LOCAL) ====================
+
+    suspend fun getFavoriteSongIds(): Set<Long> {
+        val prefs = context.dataStore.data.first()
+        val json = prefs[FAVORITES_KEY] ?: return emptySet()
+        return try {
+            val type = object : TypeToken<Set<Long>>() {}.type
+            gson.fromJson(json, type) ?: emptySet()
+        } catch (e: Exception) {
+            emptySet()
         }
     }
 
-    suspend fun reorderPlaylistSongs(playlistId: String, newOrder: List<Song>) = withContext(Dispatchers.IO) {
-        val index = playlists.indexOfFirst { it.id == playlistId }
-        if (index != -1) {
-            val playlist = playlists[index]
-            playlists[index] = playlist.copy(songs = newOrder)
+    private suspend fun saveFavoriteSongIds(ids: Set<Long>) {
+        context.dataStore.edit { prefs ->
+            prefs[FAVORITES_KEY] = gson.toJson(ids)
         }
     }
 
-    suspend fun addSongsToPlaylist(playlistId: String, songs: List<Song>) = withContext(Dispatchers.IO) {
-        val index = playlists.indexOfFirst { it.id == playlistId }
-        if (index != -1) {
-            val playlist = playlists[index]
-            val existingIds = playlist.songs.map { it.id }.toSet()
-            val newSongs = songs.filter { it.id !in existingIds }
-            val updatedSongs = playlist.songs + newSongs
-            playlists[index] = playlist.copy(songs = updatedSongs)
-        }
-    }
-
-    // ==================== FAVORITES (LOCAL SONGS) ====================
-
-    suspend fun addToFavorites(songId: Long) = withContext(Dispatchers.IO) {
-        favoriteSongs.add(songId)
-    }
-
-    suspend fun removeFromFavorites(songId: Long) = withContext(Dispatchers.IO) {
-        favoriteSongs.remove(songId)
-    }
-
-    suspend fun isFavorite(songId: Long): Boolean = withContext(Dispatchers.IO) {
-        favoriteSongs.contains(songId)
-    }
-
-    suspend fun getFavoriteSongIds(): Set<Long> = withContext(Dispatchers.IO) {
-        favoriteSongs.toSet()
-    }
-
-    suspend fun toggleFavorite(songId: Long): Boolean = withContext(Dispatchers.IO) {
-        if (favoriteSongs.contains(songId)) {
-            favoriteSongs.remove(songId)
-            false
+    suspend fun toggleFavorite(songId: Long) {
+        val favorites = getFavoriteSongIds().toMutableSet()
+        if (favorites.contains(songId)) {
+            favorites.remove(songId)
         } else {
-            favoriteSongs.add(songId)
-            true
+            favorites.add(songId)
+        }
+        saveFavoriteSongIds(favorites)
+    }
+
+    suspend fun addToFavorites(songId: Long) {
+        val favorites = getFavoriteSongIds().toMutableSet()
+        favorites.add(songId)
+        saveFavoriteSongIds(favorites)
+    }
+
+    suspend fun removeFromFavorites(songId: Long) {
+        val favorites = getFavoriteSongIds().toMutableSet()
+        favorites.remove(songId)
+        saveFavoriteSongIds(favorites)
+    }
+
+    // ==================== FAVORITES (STREAMING) ====================
+
+    suspend fun getFavoriteStreamingSongIds(): Set<String> {
+        val prefs = context.dataStore.data.first()
+        val json = prefs[STREAMING_FAVORITES_KEY] ?: return emptySet()
+        return try {
+            val type = object : TypeToken<Set<String>>() {}.type
+            gson.fromJson(json, type) ?: emptySet()
+        } catch (e: Exception) {
+            emptySet()
         }
     }
 
-    // ==================== FAVORITES (STREAMING SONGS) ====================
-
-    suspend fun addStreamingToFavorites(streamingSongId: String) = withContext(Dispatchers.IO) {
-        favoriteStreamingSongs.add(streamingSongId)
+    private suspend fun saveFavoriteStreamingSongIds(ids: Set<String>) {
+        context.dataStore.edit { prefs ->
+            prefs[STREAMING_FAVORITES_KEY] = gson.toJson(ids)
+        }
     }
 
-    suspend fun removeStreamingFromFavorites(streamingSongId: String) = withContext(Dispatchers.IO) {
-        favoriteStreamingSongs.remove(streamingSongId)
-    }
-
-    suspend fun isStreamingFavorite(streamingSongId: String): Boolean = withContext(Dispatchers.IO) {
-        favoriteStreamingSongs.contains(streamingSongId)
-    }
-
-    suspend fun getFavoriteStreamingSongIds(): Set<String> = withContext(Dispatchers.IO) {
-        favoriteStreamingSongs.toSet()
-    }
-
-    suspend fun toggleStreamingFavorite(streamingSongId: String): Boolean = withContext(Dispatchers.IO) {
-        if (favoriteStreamingSongs.contains(streamingSongId)) {
-            favoriteStreamingSongs.remove(streamingSongId)
-            false
+    suspend fun toggleStreamingFavorite(streamingId: String) {
+        val favorites = getFavoriteStreamingSongIds().toMutableSet()
+        if (favorites.contains(streamingId)) {
+            favorites.remove(streamingId)
         } else {
-            favoriteStreamingSongs.add(streamingSongId)
-            true
+            favorites.add(streamingId)
         }
+        saveFavoriteStreamingSongIds(favorites)
+    }
+
+    suspend fun addStreamingToFavorites(streamingId: String) {
+        val favorites = getFavoriteStreamingSongIds().toMutableSet()
+        favorites.add(streamingId)
+        saveFavoriteStreamingSongIds(favorites)
+    }
+
+    suspend fun removeStreamingFromFavorites(streamingId: String) {
+        val favorites = getFavoriteStreamingSongIds().toMutableSet()
+        favorites.remove(streamingId)
+        saveFavoriteStreamingSongIds(favorites)
     }
 
     // ==================== RECENTLY PLAYED ====================
 
-    suspend fun addToRecentlyPlayed(song: Song) = withContext(Dispatchers.IO) {
-        val timestamp = System.currentTimeMillis()
-
-        // Remover la canción si ya existe
-        recentlyPlayed.removeAll { it.first.id == song.id }
-
-        // Agregar al inicio
-        recentlyPlayed.add(0, Pair(song, timestamp))
-
-        // Mantener solo las últimas MAX_RECENTLY_PLAYED canciones
-        if (recentlyPlayed.size > MAX_RECENTLY_PLAYED) {
-            recentlyPlayed.removeAt(recentlyPlayed.size - 1)
+    suspend fun getRecentlyPlayedSongs(): List<Song> {
+        val prefs = context.dataStore.data.first()
+        val json = prefs[RECENTLY_PLAYED_KEY] ?: return emptyList()
+        return try {
+            val type = object : TypeToken<List<Song>>() {}.type
+            gson.fromJson(json, type) ?: emptyList()
+        } catch (e: Exception) {
+            emptyList()
         }
     }
 
-    suspend fun getRecentlyPlayedSongs(): List<Song> = withContext(Dispatchers.IO) {
-        recentlyPlayed.map { it.first }
+    private suspend fun saveRecentlyPlayedSongs(songs: List<Song>) {
+        context.dataStore.edit { prefs ->
+            prefs[RECENTLY_PLAYED_KEY] = gson.toJson(songs)
+        }
     }
 
-    suspend fun clearRecentlyPlayed() = withContext(Dispatchers.IO) {
-        recentlyPlayed.clear()
+    suspend fun addToRecentlyPlayed(song: Song) {
+        val recentSongs = getRecentlyPlayedSongs().toMutableList()
+        recentSongs.removeAll { it.id == song.id }
+        recentSongs.add(0, song)
+        val limitedSongs = recentSongs.take(50)
+
+        Log.d("LibraryRepository", "Saving ${limitedSongs.size} recent songs")
+        saveRecentlyPlayedSongs(limitedSongs)
+
+        // Verificar que se guardó
+        val saved = getRecentlyPlayedSongs()
+        Log.d("LibraryRepository", "Verified: ${saved.size} recent songs saved")
+    }
+
+    suspend fun clearRecentlyPlayed() {
+        saveRecentlyPlayedSongs(emptyList())
     }
 }

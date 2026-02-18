@@ -1,5 +1,8 @@
+package com.example.music.data.model
+
 data class User(
-    val email: String,
+    val id: String,
     val userName: String,
-    val isAdmin: Boolean
+    val email: String,
+    val isAdmin: Boolean = false
 )

@@ -10,6 +10,7 @@ espressoCore = "3.7.0"
 lifecycleRuntimeKtx = "2.8.7"
 activityCompose = "1.9.3"
 composeBom = "2024.10.01"
+composeCompiler = "1.5.11"
 constraintlayout = "2.2.1"
 coilCompose = "2.7.0"
 converterGson = "2.11.0"
@@ -93,6 +94,7 @@ androidx-constraintlayout = { group = "androidx.constraintlayout", name = "const
 androidx-recyclerview = { group = "androidx.recyclerview", name = "recyclerview", version.ref = "recyclerview" }
 androidx-swiperefreshlayout = { group = "androidx.swiperefreshlayout", name = "swiperefreshlayout", version.ref = "swiperefreshlayout" }
 androidx-palette-ktx = { group = "androidx.palette", name = "palette-ktx", version.ref = "paletteKtx" }
+androidx-hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
 
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 
@@ -126,4 +128,4 @@ kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "ko
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 google-gms-google-services = { id = "com.google.gms.google-services", version.ref = "googleGmsGoogleServices" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
-
+hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }

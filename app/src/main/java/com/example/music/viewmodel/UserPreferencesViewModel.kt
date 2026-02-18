@@ -295,4 +295,3 @@ class UserPreferencesViewModel(context: Context) : ViewModel() {
         }
     }
 }
-

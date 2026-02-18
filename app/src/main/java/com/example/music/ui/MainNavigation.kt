@@ -126,16 +126,13 @@ fun MainNavigation(viewModel: MusicPlayerViewModel, songs: List<Song>) {
                         streamingSongs = if (isOnlineMode) streamingSongs else emptyList(),
                         appMode = appMode,
                         onSongClick = { song ->
-                            // ✅ Agregar a Recently Played
                             libraryViewModel.addToRecentlyPlayed(song)
                             viewModel.playSong(song, songs)
                             navController.navigate("player")
                         },
                         onStreamingSongClick = { streamingSong ->
-                            // ✅ Cachear StreamingSong
                             viewModel.cacheStreamingSong(streamingSong)
 
-                            // ✅ Crear Song desde StreamingSong
                             val song = Song(
                                 id = streamingSong.id.hashCode().toLong(),
                                 title = streamingSong.title,
@@ -145,13 +142,11 @@ fun MainNavigation(viewModel: MusicPlayerViewModel, songs: List<Song>) {
                                 path = "streaming://${streamingSong.provider.name.lowercase()}/${streamingSong.id}",
                                 albumArtUri = streamingSong.thumbnailUrl,
                                 isStreaming = true,
-                                streamingId = streamingSong.id, // ✅ IMPORTANTE
-                                streamingProvider = streamingSong.provider.name // ✅ IMPORTANTE
+                                streamingId = streamingSong.id,
+                                streamingProvider = streamingSong.provider.name
                             )
 
-                            // ✅ Agregar a Recently Played
                             libraryViewModel.addToRecentlyPlayed(song)
-
                             viewModel.playStreamingSong(streamingSong)
                             navController.navigate("player")
                         },
@@ -161,14 +156,12 @@ fun MainNavigation(viewModel: MusicPlayerViewModel, songs: List<Song>) {
                         },
                         searchQuery = searchQuery,
                         isSearching = isSearchingStreaming,
-                        // ✅ CALLBACKS DE FAVORITOS LOCAL
                         isFavorite = { songId ->
                             favoriteSongIds.contains(songId)
                         },
                         onToggleFavorite = { song ->
                             libraryViewModel.toggleFavorite(song)
                         },
-                        // ✅ CALLBACKS DE FAVORITOS STREAMING
                         isStreamingFavorite = { streamingId ->
                             favoriteStreamingSongIds.contains(streamingId)
                         },
@@ -190,16 +183,13 @@ fun MainNavigation(viewModel: MusicPlayerViewModel, songs: List<Song>) {
                         isOnlineMode = isOnlineMode,
                         isSearching = isSearchingStreaming,
                         onSongClick = { song ->
-                            // ✅ Agregar a Recently Played
                             libraryViewModel.addToRecentlyPlayed(song)
                             viewModel.playSong(song, localSearchResults)
                             navController.navigate("player")
                         },
                         onStreamingSongClick = { streamingSong ->
-                            // ✅ Cachear StreamingSong
                             viewModel.cacheStreamingSong(streamingSong)
 
-                            // ✅ Crear Song desde StreamingSong
                             val song = Song(
                                 id = streamingSong.id.hashCode().toLong(),
                                 title = streamingSong.title,
@@ -209,24 +199,20 @@ fun MainNavigation(viewModel: MusicPlayerViewModel, songs: List<Song>) {
                                 path = "streaming://${streamingSong.provider.name.lowercase()}/${streamingSong.id}",
                                 albumArtUri = streamingSong.thumbnailUrl,
                                 isStreaming = true,
-                                streamingId = streamingSong.id, // ✅ IMPORTANTE
-                                streamingProvider = streamingSong.provider.name // ✅ IMPORTANTE
+                                streamingId = streamingSong.id,
+                                streamingProvider = streamingSong.provider.name
                             )
 
-                            // ✅ Agregar a Recently Played
                             libraryViewModel.addToRecentlyPlayed(song)
-
                             viewModel.playStreamingSong(streamingSong)
                             navController.navigate("player")
                         },
-                        // ✅ CALLBACKS DE FAVORITOS LOCAL
                         isFavorite = { songId ->
                             favoriteSongIds.contains(songId)
                         },
                         onToggleFavorite = { song ->
                             libraryViewModel.toggleFavorite(song)
                         },
-                        // ✅ CALLBACKS DE FAVORITOS STREAMING
                         isStreamingFavorite = { streamingId ->
                             favoriteStreamingSongIds.contains(streamingId)
                         },
@@ -264,12 +250,8 @@ fun MainNavigation(viewModel: MusicPlayerViewModel, songs: List<Song>) {
                     )
                 }
 
-                // ==================== FRAGMENTO PARA MainNavigation.kt ====================
-// Reemplazar los composables de "favorites" y "recently_played"
-
                 // ==================== FAVORITES SCREEN ====================
                 composable("favorites") {
-                    // ✅ Obtener canciones locales favoritas de playlists
                     val localFavoriteSongs = remember(playlists, favoriteSongIds) {
                         playlists
                             .flatMap { it.songs }
@@ -277,11 +259,9 @@ fun MainNavigation(viewModel: MusicPlayerViewModel, songs: List<Song>) {
                             .filter { favoriteSongIds.contains(it.id) }
                     }
 
-                    // ✅ Obtener canciones favoritas del historial (Recently Played)
                     val recentFavoriteSongs = remember(recentlyPlayedSongs, favoriteSongIds, favoriteStreamingSongIds) {
                         recentlyPlayedSongs.filter { song ->
                             if (song.isStreaming) {
-                                // Obtener streamingId
                                 val streamingId = song.streamingId ?: run {
                                     if (song.path.startsWith("streaming://")) {
                                         val parts = song.path.removePrefix("streaming://").split("/")
@@ -295,14 +275,13 @@ fun MainNavigation(viewModel: MusicPlayerViewModel, songs: List<Song>) {
                         }
                     }
 
-                    // ✅ Combinar ambas listas sin duplicados
                     val allFavoriteSongs = remember(localFavoriteSongs, recentFavoriteSongs) {
                         (localFavoriteSongs + recentFavoriteSongs).distinctBy { it.id }
                     }
 
                     FavoritesScreen(
                         favoriteSongs = allFavoriteSongs,
-                        appMode = appMode, // ✅ NUEVO: Pasar modo actual
+                        appMode = appMode,
                         currentSong = currentSong,
                         isPlaying = isPlaying,
                         onSongClick = { song ->
@@ -312,7 +291,6 @@ fun MainNavigation(viewModel: MusicPlayerViewModel, songs: List<Song>) {
                         },
                         onToggleFavorite = { song ->
                             if (song.isStreaming) {
-                                // ✅ Es streaming - extraer ID del path
                                 val streamingId = song.streamingId ?: run {
                                     if (song.path.startsWith("streaming://")) {
                                         val parts = song.path.removePrefix("streaming://").split("/")
@@ -321,7 +299,6 @@ fun MainNavigation(viewModel: MusicPlayerViewModel, songs: List<Song>) {
                                 }
 
                                 streamingId?.let { id ->
-                                    // ✅ Obtener provider
                                     val provider = song.streamingProvider?.let { providerName ->
                                         when (providerName.uppercase()) {
                                             "INNERTUBE" -> com.example.music.data.api.MusicProviderType.INNERTUBE
@@ -331,7 +308,6 @@ fun MainNavigation(viewModel: MusicPlayerViewModel, songs: List<Song>) {
                                         }
                                     } ?: com.example.music.data.api.MusicProviderType.INNERTUBE
 
-                                    // ✅ Crear StreamingSong para toggle
                                     val streamingSong = com.example.music.data.model.StreamingSong(
                                         id = id,
                                         title = song.title,
@@ -356,21 +332,18 @@ fun MainNavigation(viewModel: MusicPlayerViewModel, songs: List<Song>) {
                 composable("recently_played") {
                     RecentlyPlayedScreen(
                         recentlyPlayedSongs = recentlyPlayedSongs,
-                        appMode = appMode, // ✅ NUEVO: Pasar modo actual
+                        appMode = appMode,
                         favoriteSongIds = favoriteSongIds,
                         favoriteStreamingSongIds = favoriteStreamingSongIds,
                         currentSong = currentSong,
                         isPlaying = isPlaying,
                         onSongClick = { song ->
-                            // ✅ Agregar a Recently Played
                             libraryViewModel.addToRecentlyPlayed(song)
                             viewModel.playSong(song, recentlyPlayedSongs)
                             navController.navigate("player")
                         },
-                        // ✅ TOGGLE CORREGIDO - Detecta tipo de canción
                         onToggleFavorite = { song ->
                             if (song.isStreaming) {
-                                // ✅ Es streaming - extraer ID del path
                                 val streamingId = song.streamingId ?: run {
                                     if (song.path.startsWith("streaming://")) {
                                         val parts = song.path.removePrefix("streaming://").split("/")
@@ -379,7 +352,6 @@ fun MainNavigation(viewModel: MusicPlayerViewModel, songs: List<Song>) {
                                 }
 
                                 streamingId?.let { id ->
-                                    // ✅ Obtener provider
                                     val provider = song.streamingProvider?.let { providerName ->
                                         when (providerName.uppercase()) {
                                             "INNERTUBE" -> com.example.music.data.api.MusicProviderType.INNERTUBE
@@ -389,7 +361,6 @@ fun MainNavigation(viewModel: MusicPlayerViewModel, songs: List<Song>) {
                                         }
                                     } ?: com.example.music.data.api.MusicProviderType.INNERTUBE
 
-                                    // ✅ Crear StreamingSong para toggle
                                     val streamingSong = com.example.music.data.model.StreamingSong(
                                         id = id,
                                         title = song.title,
@@ -403,7 +374,6 @@ fun MainNavigation(viewModel: MusicPlayerViewModel, songs: List<Song>) {
                                     libraryViewModel.toggleStreamingFavorite(streamingSong)
                                 }
                             } else {
-                                // ✅ Es local
                                 libraryViewModel.toggleFavorite(song)
                             }
                         },
@@ -413,8 +383,6 @@ fun MainNavigation(viewModel: MusicPlayerViewModel, songs: List<Song>) {
                         onNavigateBack = { navController.navigateUp() }
                     )
                 }
-
-
 
                 // ==================== PLAYLISTS SCREEN ====================
                 composable("playlists") {
@@ -624,7 +592,6 @@ fun MainNavigation(viewModel: MusicPlayerViewModel, songs: List<Song>) {
                 composable("user") {
                     val context = LocalContext.current
 
-                    // ✅ USAR FACTORY
                     val userPreferencesViewModel: UserPreferencesViewModel = viewModel(
                         factory = object : ViewModelProvider.Factory {
                             override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -690,300 +657,6 @@ fun MainNavigation(viewModel: MusicPlayerViewModel, songs: List<Song>) {
                     val userPreferences by userPreferencesViewModel.userPreferences.collectAsStateWithLifecycle()
                     val accountType by userPreferencesViewModel.accountType.collectAsStateWithLifecycle()
 
-                    var isLoading by remember { mutableStateOf(false) }
-                    var isSyncing by remember { mutableStateOf(false) }
-
-                    AccountScreen(
-                        userPreferences = userPreferences,
-                        accountType = accountType,
-                        isLoading = isLoading,
-                        isSyncing = isSyncing,
-                        onLogin = { email, password ->
-                            isLoading = true
-                            scope.launch {
-                                try {
-                                    if (email.isBlank() || password.isBlank()) {
-                                        Toast.makeText(context, "Please fill all fields", Toast.LENGTH_SHORT).show()
-                                        isLoading = false
-                                        return@launch
-                                    }
-
-                                    // Simulate login
-                                    delay(1000)
-
-                                    userPreferencesViewModel.updateLoginState(
-                                        isLoggedIn = true,
-                                        isAdmin = false,
-                                        email = email,
-                                        userName = "User"
-                                    )
-
-                                    Toast.makeText(context, "Logged in successfully", Toast.LENGTH_SHORT).show()
-                                    isLoading = false
-                                    navController.navigateUp()
-                                } catch (e: Exception) {
-                                    isLoading = false
-                                    Toast.makeText(context, "Login failed: ${e.message}", Toast.LENGTH_SHORT).show()
-                                }
-                            }
-                        },
-                        onRegister = { email, password, name ->
-                            isLoading = true
-                            scope.launch {
-                                try {
-                                    if (email.isBlank() || password.isBlank() || name.isBlank()) {
-                                        Toast.makeText(context, "Please fill all fields", Toast.LENGTH_SHORT).show()
-                                        isLoading = false
-                                        return@launch
-                                    }
-
-                                    // Simulate registration
-                                    delay(1000)
-
-                                    userPreferencesViewModel.updateLoginState(
-                                        isLoggedIn = true,
-                                        isAdmin = false,
-                                        email = email,
-                                        userName = name
-                                    )
-
-                                    Toast.makeText(context, "Account created successfully", Toast.LENGTH_SHORT).show()
-                                    isLoading = false
-                                    navController.navigateUp()
-                                } catch (e: Exception) {
-                                    isLoading = false
-                                    Toast.makeText(context, "Registration failed: ${e.message}", Toast.LENGTH_SHORT).show()
-                                }
-                            }
-                        },
-                        onLogout = {
-                            scope.launch {
-                                userPreferencesViewModel.logoutUser()
-                                Toast.makeText(context, "Logged out", Toast.LENGTH_SHORT).show()
-                            }
-                        },
-                        onSync = {
-                            isSyncing = true
-                            scope.launch {
-                                try {
-                                    delay(2000)
-                                    isSyncing = false
-                                    Toast.makeText(context, "Data synchronized ✅", Toast.LENGTH_SHORT).show()
-                                } catch (e: Exception) {
-                                    isSyncing = false
-                                    Toast.makeText(context, "Sync failed: ${e.message}", Toast.LENGTH_SHORT).show()
-                                }
-                            }
-                        },
-                        onBackClick = { navController.navigateUp() }
-                    )
-                }
-
-                // ==================== PLAYBACK SETTINGS SCREEN ====================
-                composable("playback_settings") {
-                    val context = LocalContext.current
-
-                    val userPreferencesViewModel: UserPreferencesViewModel = viewModel(
-                        factory = object : ViewModelProvider.Factory {
-                            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                                @Suppress("UNCHECKED_CAST")
-                                return UserPreferencesViewModel(context) as T
-                            }
-                        }
-                    )
-                    val userPreferences by userPreferencesViewModel.userPreferences.collectAsStateWithLifecycle()
-
-                    PlaybackSettingsScreen(
-                        userPreferences = userPreferences,
-                        onAudioQualityChange = { newQuality ->
-                            userPreferencesViewModel.setAudioQuality(newQuality)
-                            Toast.makeText(context, "Audio quality set to ${newQuality.displayName}", Toast.LENGTH_SHORT).show()
-                        },
-                        onStreamingQualityChange = { newQuality ->
-                            userPreferencesViewModel.setStreamingQuality(newQuality)
-                            Toast.makeText(context, "Streaming quality set to ${newQuality.displayName}", Toast.LENGTH_SHORT).show()
-                        },
-                        onDownloadQualityChange = { newQuality ->
-                            userPreferencesViewModel.setDownloadQuality(newQuality)
-                            Toast.makeText(context, "Download quality set to ${newQuality.displayName}", Toast.LENGTH_SHORT).show()
-                        },
-                        onCrossfadeChange = { seconds ->
-                            userPreferencesViewModel.setCrossfadeDuration(seconds)
-                            Toast.makeText(context, "Crossfade set to ${seconds}s", Toast.LENGTH_SHORT).show()
-                        },
-                        onToggleGapless = {
-                            userPreferencesViewModel.toggleGaplessPlayback()
-                            Toast.makeText(context, "Gapless playback toggled", Toast.LENGTH_SHORT).show()
-                        },
-                        onToggleNormalize = {
-                            userPreferencesViewModel.toggleNormalizeVolume()
-                            Toast.makeText(context, "Volume normalization toggled", Toast.LENGTH_SHORT).show()
-                        },
-                        onEqualizerChange = { preset ->
-                            userPreferencesViewModel.setEqualizerPreset(preset)
-                            Toast.makeText(context, "Equalizer preset set to ${preset.displayName}", Toast.LENGTH_SHORT).show()
-                        },
-                        onBackClick = { navController.navigateUp() }
-                    )
-                }
-
-                // ==================== PLAYER SCREEN ====================
-                composable("player") {
-                    val repeatMode by viewModel.repeatMode.collectAsStateWithLifecycle()
-                    val shuffleEnabled by viewModel.shuffleEnabled.collectAsStateWithLifecycle()
-                    val currentPosition by viewModel.currentPosition.collectAsStateWithLifecycle()
-                    val duration by viewModel.duration.collectAsStateWithLifecycle()
-                    val isLoadingStream by viewModel.isLoadingStream.collectAsStateWithLifecycle()
-
-                    // ✅ DETECTAR SI ES FAVORITO (LOCAL O STREAMING)
-                    val isLiked = remember(currentSong, favoriteSongIds, favoriteStreamingSongIds) {
-                        currentSong?.let { song ->
-                            if (song.isStreaming) {
-                                // Usar streamingId si está disponible
-                                val streamingId = song.streamingId ?: run {
-                                    if (song.path.startsWith("streaming://")) {
-                                        val parts = song.path.removePrefix("streaming://").split("/")
-                                        if (parts.size >= 2) parts[1] else null
-                                    } else null
-                                }
-                                streamingId?.let { favoriteStreamingSongIds.contains(it) } ?: false
-                            } else {
-                                favoriteSongIds.contains(song.id)
-                            }
-                        } ?: false
-                    }
-
-                    MusicPlayerScreen(
-                        playerState = PlayerState(
-                            currentSong = currentSong,
-                            isPlaying = isPlaying,
-                            currentPosition = currentPosition,
-                            duration = duration,
-                            isShuffleEnabled = shuffleEnabled,
-                            repeatMode = repeatMode,
-                            isLiked = isLiked,
-                            isLoadingStream = isLoadingStream
-                        ),
-                        appMode = appMode,
-                        onToggleMode = { viewModel.toggleOnlineMode() },
-                        onPlayPause = { viewModel.togglePlayPause() },
-                        onSkipNext = { viewModel.skipToNext() },
-                        onSkipPrevious = { viewModel.skipToPrevious() },
-                        onSeek = { position -> viewModel.seekTo(position) },
-                        onToggleShuffle = { viewModel.toggleShuffle() },
-                        onToggleRepeat = { viewModel.cycleRepeatMode() },
-                        onToggleLike = {
-                            currentSong?.let { song ->
-                                if (song.isStreaming) {
-                                    // ✅ Es streaming song - usar streamingId si está disponible
-                                    val streamingId = song.streamingId ?: run {
-                                        if (song.path.startsWith("streaming://")) {
-                                            val parts = song.path.removePrefix("streaming://").split("/")
-                                            if (parts.size >= 2) parts[1] else null
-                                        } else null
-                                    }
-
-                                    streamingId?.let { id ->
-                                        // ✅ Obtener provider
-                                        val provider = song.streamingProvider?.let { providerName ->
-                                            when (providerName.uppercase()) {
-                                                "INNERTUBE" -> com.example.music.data.api.MusicProviderType.INNERTUBE
-                                                "JIOSAAVN" -> com.example.music.data.api.MusicProviderType.JIOSAAVN
-                                                "YOUTUBE_MUSIC" -> com.example.music.data.api.MusicProviderType.INNERTUBE
-                                                else -> com.example.music.data.api.MusicProviderType.INNERTUBE
-                                            }
-                                        } ?: com.example.music.data.api.MusicProviderType.INNERTUBE
-
-                                        // ✅ Crear StreamingSong para toggle
-                                        val streamingSong = com.example.music.data.model.StreamingSong(
-                                            id = id,
-                                            title = song.title,
-                                            artist = song.artist,
-                                            album = song.album,
-                                            duration = song.duration,
-                                            thumbnailUrl = song.albumArtUri,
-                                            provider = provider
-                                        )
-                                        libraryViewModel.toggleStreamingFavorite(streamingSong)
-                                    }
-                                } else {
-                                    // ✅ Es local song
-                                    libraryViewModel.toggleFavorite(song)
-                                }
-                            }
-                        },
-                        onBackClick = { navController.navigateUp() }
-                    )
-                }
-
-
-                // ==================== PLAYBACK SETTINGS SCREEN ====================
-                composable("playback_settings") {
-                    val context = LocalContext.current
-
-                    val userPreferencesViewModel: UserPreferencesViewModel = viewModel(
-                        factory = object : ViewModelProvider.Factory {
-                            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                                @Suppress("UNCHECKED_CAST")
-                                return UserPreferencesViewModel(context) as T
-                            }
-                        }
-                    )
-                    val userPreferences by userPreferencesViewModel.userPreferences.collectAsStateWithLifecycle()
-
-                    PlaybackSettingsScreen(
-                        userPreferences = userPreferences,
-                        onAudioQualityChange = { newQuality ->
-                            userPreferencesViewModel.setAudioQuality(newQuality)
-                            Toast.makeText(context, "Audio quality set to ${newQuality.displayName}", Toast.LENGTH_SHORT).show()
-                        },
-                        onStreamingQualityChange = { newQuality ->
-                            userPreferencesViewModel.setStreamingQuality(newQuality)
-                            Toast.makeText(context, "Streaming quality set to ${newQuality.displayName}", Toast.LENGTH_SHORT).show()
-                        },
-                        onDownloadQualityChange = { newQuality ->
-                            userPreferencesViewModel.setDownloadQuality(newQuality)
-                            Toast.makeText(context, "Download quality set to ${newQuality.displayName}", Toast.LENGTH_SHORT).show()
-                        },
-                        onCrossfadeChange = { seconds ->
-                            userPreferencesViewModel.setCrossfadeDuration(seconds)
-                            Toast.makeText(context, "Crossfade set to ${seconds}s", Toast.LENGTH_SHORT).show()
-                        },
-                        onToggleGapless = {
-                            userPreferencesViewModel.toggleGaplessPlayback()
-                            Toast.makeText(context, "Gapless playback toggled", Toast.LENGTH_SHORT).show()
-                        },
-                        onToggleNormalize = {
-                            userPreferencesViewModel.toggleNormalizeVolume()
-                            Toast.makeText(context, "Volume normalization toggled", Toast.LENGTH_SHORT).show()
-                        },
-                        onEqualizerChange = { preset ->
-                            userPreferencesViewModel.setEqualizerPreset(preset)
-                            Toast.makeText(context, "Equalizer preset set to ${preset.displayName}", Toast.LENGTH_SHORT).show()
-                        },
-                        onBackClick = { navController.navigateUp() }
-                    )
-                }
-
-
-               // ==================== PLAYBACK SETTINGS SCREEN ====================
-                // ==================== ACCOUNT SCREEN ====================
-                composable("account") {
-                    val context = LocalContext.current
-                    val scope = rememberCoroutineScope()
-
-                    val userPreferencesViewModel: UserPreferencesViewModel = viewModel(
-                        factory = object : ViewModelProvider.Factory {
-                            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                                @Suppress("UNCHECKED_CAST")
-                                return UserPreferencesViewModel(context) as T
-                            }
-                        }
-                    )
-
-                    val userPreferences by userPreferencesViewModel.userPreferences.collectAsStateWithLifecycle()
-                    val accountType by userPreferencesViewModel.accountType.collectAsStateWithLifecycle()
-
                     // ✅ Get current user from LibraryViewModel
                     val currentUser by libraryViewModel.currentUser.collectAsStateWithLifecycle()
 
@@ -1011,23 +684,27 @@ fun MainNavigation(viewModel: MusicPlayerViewModel, songs: List<Song>) {
                                     if (result.isSuccess) {
                                         val user = result.getOrNull()
 
-                                        userPreferencesViewModel.updateLoginState(
-                                            isLoggedIn = true,
-                                            isAdmin = user?.isAdmin ?: false,
-                                            email = email,
-                                            userName = user?.userName ?: "User"
-                                        )
+                                        if (user != null) {
+                                            userPreferencesViewModel.updateLoginState(
+                                                isLoggedIn = true,
+                                                isAdmin = user.isAdmin,
+                                                email = user.email,
+                                                userName = user.userName
+                                            )
 
-                                        Toast.makeText(context, "Logged in successfully", Toast.LENGTH_SHORT).show()
-                                        isLoading = false
-                                        navController.navigateUp()
+                                            Toast.makeText(context, "Logged in successfully as ${user.userName}", Toast.LENGTH_SHORT).show()
+                                            navController.navigateUp()
+                                        } else {
+                                            Toast.makeText(context, "Login failed: No user data", Toast.LENGTH_SHORT).show()
+                                        }
                                     } else {
-                                        Toast.makeText(context, "Login failed", Toast.LENGTH_SHORT).show()
-                                        isLoading = false
+                                        val errorMessage = result.exceptionOrNull()?.message ?: "Unknown error"
+                                        Toast.makeText(context, "Login failed: $errorMessage", Toast.LENGTH_SHORT).show()
                                     }
+                                    isLoading = false
                                 } catch (e: Exception) {
                                     isLoading = false
-                                    Toast.makeText(context, "Login failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, "Login error: ${e.message}", Toast.LENGTH_SHORT).show()
                                 }
                             }
                         },
@@ -1045,32 +722,38 @@ fun MainNavigation(viewModel: MusicPlayerViewModel, songs: List<Song>) {
                                     val result = libraryViewModel.registerUser(email, password, name)
 
                                     if (result.isSuccess) {
-                                        userPreferencesViewModel.updateLoginState(
-                                            isLoggedIn = true,
-                                            isAdmin = false,
-                                            email = email,
-                                            userName = name
-                                        )
+                                        val user = result.getOrNull()
 
-                                        Toast.makeText(context, "Account created successfully", Toast.LENGTH_SHORT).show()
-                                        isLoading = false
-                                        navController.navigateUp()
+                                        if (user != null) {
+                                            userPreferencesViewModel.updateLoginState(
+                                                isLoggedIn = true,
+                                                isAdmin = user.isAdmin,
+                                                email = user.email,
+                                                userName = user.userName
+                                            )
+
+                                            Toast.makeText(context, "Account created successfully! Welcome ${user.userName}", Toast.LENGTH_SHORT).show()
+                                            navController.navigateUp()
+                                        } else {
+                                            Toast.makeText(context, "Registration failed: No user data", Toast.LENGTH_SHORT).show()
+                                        }
                                     } else {
-                                        Toast.makeText(context, "Registration failed", Toast.LENGTH_SHORT).show()
-                                        isLoading = false
+                                        val errorMessage = result.exceptionOrNull()?.message ?: "Unknown error"
+                                        Toast.makeText(context, "Registration failed: $errorMessage", Toast.LENGTH_SHORT).show()
                                     }
+                                    isLoading = false
                                 } catch (e: Exception) {
                                     isLoading = false
-                                    Toast.makeText(context, "Registration failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, "Registration error: ${e.message}", Toast.LENGTH_SHORT).show()
                                 }
                             }
                         },
                         onLogout = {
                             scope.launch {
-                                // ✅ LOGOUT using LibraryViewModel
+                                // ✅ LOGOUT using both ViewModels
                                 libraryViewModel.logoutUser()
                                 userPreferencesViewModel.logoutUser()
-                                Toast.makeText(context, "Logged out", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "Logged out successfully", Toast.LENGTH_SHORT).show()
                             }
                         },
                         onSync = {
@@ -1079,9 +762,8 @@ fun MainNavigation(viewModel: MusicPlayerViewModel, songs: List<Song>) {
                                 try {
                                     // ✅ SYNC using LibraryViewModel
                                     libraryViewModel.syncUserData()
-                                    delay(2000)
                                     isSyncing = false
-                                    Toast.makeText(context, "Data synchronized ✅", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, "Data synchronized successfully ✅", Toast.LENGTH_SHORT).show()
                                 } catch (e: Exception) {
                                     isSyncing = false
                                     Toast.makeText(context, "Sync failed: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -1092,14 +774,10 @@ fun MainNavigation(viewModel: MusicPlayerViewModel, songs: List<Song>) {
                     )
                 }
 
-
-
-
-// ==================== PLAYBACK SETTINGS SCREEN ====================
+                // ==================== PLAYBACK SETTINGS SCREEN ====================
                 composable("playback_settings") {
                     val context = LocalContext.current
 
-                    // ✅ USAR FACTORY
                     val userPreferencesViewModel: UserPreferencesViewModel = viewModel(
                         factory = object : ViewModelProvider.Factory {
                             override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -1156,7 +834,6 @@ fun MainNavigation(viewModel: MusicPlayerViewModel, songs: List<Song>) {
                     val isLiked = remember(currentSong, favoriteSongIds, favoriteStreamingSongIds) {
                         currentSong?.let { song ->
                             if (song.isStreaming) {
-                                // Usar streamingId si está disponible
                                 val streamingId = song.streamingId ?: run {
                                     if (song.path.startsWith("streaming://")) {
                                         val parts = song.path.removePrefix("streaming://").split("/")
@@ -1192,7 +869,6 @@ fun MainNavigation(viewModel: MusicPlayerViewModel, songs: List<Song>) {
                         onToggleLike = {
                             currentSong?.let { song ->
                                 if (song.isStreaming) {
-                                    // ✅ Es streaming song - usar streamingId si está disponible
                                     val streamingId = song.streamingId ?: run {
                                         if (song.path.startsWith("streaming://")) {
                                             val parts = song.path.removePrefix("streaming://").split("/")
@@ -1201,7 +877,6 @@ fun MainNavigation(viewModel: MusicPlayerViewModel, songs: List<Song>) {
                                     }
 
                                     streamingId?.let { id ->
-                                        // ✅ Obtener provider
                                         val provider = song.streamingProvider?.let { providerName ->
                                             when (providerName.uppercase()) {
                                                 "INNERTUBE" -> com.example.music.data.api.MusicProviderType.INNERTUBE
@@ -1211,7 +886,6 @@ fun MainNavigation(viewModel: MusicPlayerViewModel, songs: List<Song>) {
                                             }
                                         } ?: com.example.music.data.api.MusicProviderType.INNERTUBE
 
-                                        // ✅ Crear StreamingSong para toggle
                                         val streamingSong = com.example.music.data.model.StreamingSong(
                                             id = id,
                                             title = song.title,
@@ -1224,7 +898,6 @@ fun MainNavigation(viewModel: MusicPlayerViewModel, songs: List<Song>) {
                                         libraryViewModel.toggleStreamingFavorite(streamingSong)
                                     }
                                 } else {
-                                    // ✅ Es local song
                                     libraryViewModel.toggleFavorite(song)
                                 }
                             }

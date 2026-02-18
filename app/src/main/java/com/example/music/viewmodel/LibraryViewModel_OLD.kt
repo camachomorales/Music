@@ -1,4 +1,3 @@
-// app/src/main/java/com/example/music/viewmodel/LibraryViewModel.kt
 package com.example.music.viewmodel
 
 import android.app.Application
@@ -44,6 +43,17 @@ class LibraryViewModel_OLD(application: Application) : AndroidViewModel(applicat
     // ==================== RECENTLY PLAYED ====================
     private val _recentlyPlayedSongs = MutableStateFlow<List<Song>>(emptyList())
     val recentlyPlayedSongs: StateFlow<List<Song>> = _recentlyPlayedSongs.asStateFlow()
+
+    // ==================== USER AUTHENTICATION ====================
+    data class User(
+        val id: String,
+        val userName: String,
+        val email: String,
+        val isAdmin: Boolean = false
+    )
+
+    private val _currentUser = MutableStateFlow<User?>(null)
+    val currentUser: StateFlow<User?> = _currentUser.asStateFlow()
 
     init {
         loadPlaylists()
@@ -237,5 +247,82 @@ class LibraryViewModel_OLD(application: Application) : AndroidViewModel(applicat
                 _isSearching.value = false
             }
         }
+    }
+
+    // ==================== USER AUTHENTICATION METHODS ====================
+
+    suspend fun loginUser(email: String, password: String): Result<User> {
+        return try {
+            // TODO: Implementar lógica real de login con tu backend/API
+            // Por ahora, simulación básica:
+            if (email.isNotBlank() && password.isNotBlank()) {
+                val user = User(
+                    id = "user_${System.currentTimeMillis()}",
+                    userName = email.substringBefore("@").replaceFirstChar { it.uppercase() },
+                    email = email,
+                    isAdmin = email.contains("admin", ignoreCase = true) // Admin si el email contiene "admin"
+                )
+                _currentUser.value = user
+                Result.success(user)
+            } else {
+                Result.failure(Exception("Email and password are required"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun registerUser(email: String, password: String, name: String): Result<User> {
+        return try {
+            // TODO: Implementar lógica real de registro con tu backend/API
+            if (email.isNotBlank() && password.isNotBlank() && name.isNotBlank()) {
+                // Validar formato de email básico
+                if (!email.contains("@")) {
+                    return Result.failure(Exception("Invalid email format"))
+                }
+
+                // Validar longitud de contraseña
+                if (password.length < 6) {
+                    return Result.failure(Exception("Password must be at least 6 characters"))
+                }
+
+                val user = User(
+                    id = "user_${System.currentTimeMillis()}",
+                    userName = name,
+                    email = email,
+                    isAdmin = false
+                )
+                _currentUser.value = user
+                Result.success(user)
+            } else {
+                Result.failure(Exception("All fields are required"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    fun logoutUser() {
+        viewModelScope.launch {
+            _currentUser.value = null
+            // Opcional: Limpiar datos sensibles si es necesario
+        }
+    }
+
+    suspend fun syncUserData() {
+        // TODO: Implementar sincronización real con tu backend
+        // Por ahora solo simulamos un proceso
+        kotlinx.coroutines.delay(1500)
+
+        // Aquí podrías sincronizar:
+        // - Playlists del usuario
+        // - Favoritos
+        // - Historial de reproducción
+        // - Configuraciones
+
+        loadPlaylists()
+        loadFavorites()
+        loadStreamingFavorites()
+        loadRecentlyPlayed()
     }
 }

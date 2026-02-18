@@ -31,7 +31,7 @@
         android:id="@+id/btn_play_pause"
         android:layout_width="32dp"
         android:layout_height="32dp"
-        android:src="@drawable/ic_play1"
+        android:src="@drawable/ic_play"
         android:background="@android:color/transparent"
         android:clickable="true"
         android:focusable="true"

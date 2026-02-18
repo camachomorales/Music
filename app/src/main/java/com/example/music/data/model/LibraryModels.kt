@@ -1,5 +1,5 @@
 package com.example.music.data.model
-
+/*
 data class Playlist(
     val id: String,
     val name: String,
@@ -8,6 +8,15 @@ data class Playlist(
     val songs: List<Song> = emptyList(),
     val createdAt: Long = System.currentTimeMillis(),
     val isUserCreated: Boolean = true
+)*/
+
+data class Playlist(
+    val id: String,
+    val name: String,
+    val description: String = "",
+    val songs: List<Song> = emptyList(),
+    val createdAt: Long = System.currentTimeMillis(),
+    val coverUri: String? = null
 )
 
 data class Album(
